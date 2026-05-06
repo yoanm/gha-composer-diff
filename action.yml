@@ -27,7 +27,7 @@ runs:
     - name: Fetch previous files
       uses: actions/checkout@v6
       with:
-        ref: ${{ github.event.pull_request.payload.head.sha }}
+        ref: ${{ github.event.pull_request.head.sha }}
         path: current
         sparse-checkout: |
           composer.json
@@ -36,7 +36,7 @@ runs:
     - name: Fetch current files
       uses: actions/checkout@v6
       with:
-        ref: ${{ github.event.pull_request.payload.base.sha }}
+        ref: ${{ github.event.pull_request.base.sha }}
         path: previous
         sparse-checkout: |
           composer.json

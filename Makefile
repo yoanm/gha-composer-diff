@@ -64,6 +64,16 @@ $(eval build_o ?=)
 build:
 	go build -v  -o gha-deps-diff $(build_o) cmd/gha-deps-diff/main.go
 
+.PHONY: build-all
+build: ## 🗜️  Build cross-platform action binaries
+build-all:
+	GOOS=windows GOARCH=amd64 make build build_o="-o bin/gha-deps-diff-windows-amd64"
+	GOOS=windows GOARCH=arm64 make build build_o="-o bin/gha-deps-diff-windows-arm64"
+	GOOS=linux GOARCH=amd64 make build build_o="-o bin/gha-deps-diff-linux-amd64"
+	GOOS=linux GOARCH=arm64 make build build_o="-o bin/gha-deps-diff-linux-arm64"
+	GOOS=darwin GOARCH=amd64 make build build_o="-o bin/gha-deps-diff-darwin-amd64"
+	GOOS=darwin GOARCH=arm64 make build build_o="-o bin/gha-deps-diff-darwin-arm64"
+
 .PHONY: verify-deps
 verify-deps: ## 🗜️  Verify dependencies
 verify-deps:
@@ -102,13 +112,3 @@ vet: ## 🔍 Run go vet (suspicious code patterns)
 $(eval bench_o ?=)
 benchmark: ## 🔍 Run benchmarks
 	go test -run='^$$' -bench=. -benchmem $(bench_o) ./...
-
-
-.PHONY: build-all
-build-all:
-	GOOS=windows GOARCH=amd64 make build build_o="-o bin/gha-deps-diff-windows-amd64"
-	GOOS=windows GOARCH=arm64 make build build_o="-o bin/gha-deps-diff-windows-arm64"
-	GOOS=linux GOARCH=amd64 make build build_o="-o bin/gha-deps-diff-linux-amd64"
-	GOOS=linux GOARCH=arm64 make build build_o="-o bin/gha-deps-diff-linux-arm64"
-	GOOS=darwin GOARCH=amd64 make build build_o="-o bin/gha-deps-diff-darwin-amd64"
-	GOOS=darwin GOARCH=arm64 make build build_o="-o bin/gha-deps-diff-darwin-arm64"

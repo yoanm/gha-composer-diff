@@ -1,5 +1,6 @@
-/DOC.md -diff linguist-generated=true
-/cmd/gha-deps-diff/README.md -diff linguist-generated=true
+/DOC.md                         -diff linguist-generated=true
+/cmd/gha-deps-diff/README.md    -diff linguist-generated=true
+/bin/*                          -diff linguist-generated=true
 
 # Ignore all test and documentation for archive
 /DOC.md                         export-ignore
