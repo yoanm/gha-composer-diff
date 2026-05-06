@@ -4,3 +4,5 @@ github.com/sergi/go-diff v1.4.0 h1:n/SP9D5ad1fORl+llWyN+D6qoUETXNZARKjyY2/KVCw=
 github.com/sergi/go-diff v1.4.0/go.mod h1:A0bzQcvG0E7Rwjx0REVgAGH58e96+X0MeOfepqsbeW4=
 github.com/yoanm/go-deps-diff v0.0.0-20260506093134-f7273d923f71 h1:rlvBixh7i6wh1D9oFZCBLzjtFHIhIGI86gnrvLwcyZs=
 github.com/yoanm/go-deps-diff v0.0.0-20260506093134-f7273d923f71/go.mod h1:Ekra2bW3cm9ttLUQFOiC2A5p7hBXYftvPyMhYIP1Xxc=
+github.com/yoanm/go-deps-diff v0.0.0-20260506183639-191c72decdd2 h1:lSeQ9fe6HfbIn8zi0Fj7dJ+Iejwas4RRZYc4ka6Fm/0=
+github.com/yoanm/go-deps-diff v0.0.0-20260506183639-191c72decdd2/go.mod h1:Ekra2bW3cm9ttLUQFOiC2A5p7hBXYftvPyMhYIP1Xxc=
