@@ -1,0 +1,6 @@
+github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883 h1:bvNMNQO63//z+xNgfBlViaCIJKLlCJ6/fmUseuG0wVQ=
+github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=
+github.com/sergi/go-diff v1.4.0 h1:n/SP9D5ad1fORl+llWyN+D6qoUETXNZARKjyY2/KVCw=
+github.com/sergi/go-diff v1.4.0/go.mod h1:A0bzQcvG0E7Rwjx0REVgAGH58e96+X0MeOfepqsbeW4=
+github.com/yoanm/go-deps-diff v0.0.0-20260506093134-f7273d923f71 h1:rlvBixh7i6wh1D9oFZCBLzjtFHIhIGI86gnrvLwcyZs=
+github.com/yoanm/go-deps-diff v0.0.0-20260506093134-f7273d923f71/go.mod h1:Ekra2bW3cm9ttLUQFOiC2A5p7hBXYftvPyMhYIP1Xxc=

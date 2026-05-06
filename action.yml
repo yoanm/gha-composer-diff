@@ -1,0 +1,62 @@
+name: 'TODO'
+branding:
+  icon: 'package'
+  color: 'orange'
+description: |
+  In case lock file is updated, action will output versions differences as summary
+inputs:
+  manager:
+    required: true
+    description: 'Which package manager to assess (Available: \"composer\")'
+    default: "composer"
+
+runs:
+  using: "composite"
+  steps:
+    # Even if an input is marked as "required", an empty value (or no value) may be passed !
+    - name: Validate inputs
+      uses: actions/github-script@v7
+      env:
+        INPUT_MANAGER: ${{ inputs.manager }}
+      with:
+        script: |
+          core.info('Validate inputs');
+          
+          core.getInput('manager', {required: true});
+
+    - name: Fetch previous files
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.payload.head.sha }}
+        path: current
+        sparse-checkout: |
+          composer.json
+          composer.lock
+
+    - name: Fetch current files
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.payload.base.sha }}
+        path: previous
+        sparse-checkout: |
+          composer.json
+          composer.lock
+        sparse-checkout-cone-mode: false
+
+    - name: Perform diff
+      run: |
+        ${{ github.action_path }}/bin/gha-deps-diff-linux-amd64 \
+          -previous-req previous/composer.json \
+          -previous-lock previous/composer.lock \
+          -current-req current/composer.json \
+          -current-lock current/composer.lock \
+        | tee summary.md
+      shell: bash
+
+    - name: Build summary
+      env:
+        PACKAGE_MANAGER: ${{ inputs.manager }}
+      run: |
+        echo "# 🔎 ${PACKAGE_MANAGER} packages 🔍 " >> $GITHUB_STEP_SUMMARY
+        cat summary.md >> $GITHUB_STEP_SUMMARY
+      shell: bash
