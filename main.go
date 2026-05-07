@@ -2,10 +2,11 @@ package ghadepsdiff
 
 import (
 	"fmt"
-	"github.com/yoanm/go-deps-diff"
+	"os"
+
+	depsdiff "github.com/yoanm/go-deps-diff"
 	"github.com/yoanm/go-deps-diff/shared"
 	"github.com/yoanm/go-deps-diff/summary"
-	"os"
 )
 
 func Run(cfg *Config) (string, error) {
