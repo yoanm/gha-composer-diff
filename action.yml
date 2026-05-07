@@ -24,6 +24,11 @@ runs:
           
           core.getInput('manager', {required: true});
 
+    #### TODO
+    #### - Manage push vs pr (for head and base sha)
+    #### - Manage req/lock file based on the manager
+    #### - Manage OS + Proc (for the binary to run)
+
     - name: Fetch previous files
       uses: actions/checkout@v6
       with:
@@ -50,7 +55,7 @@ runs:
           -previous-lock previous/composer.lock \
           -current-req current/composer.json \
           -current-lock current/composer.lock \
-        | tee summary.md
+        > summary.md
       shell: bash
 
     - name: Build summary

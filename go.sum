@@ -12,3 +12,5 @@ github.com/yoanm/go-deps-diff v0.0.0-20260507170641-fbaa3a64c322 h1:xSnHDs5ba819
 github.com/yoanm/go-deps-diff v0.0.0-20260507170641-fbaa3a64c322/go.mod h1:Ekra2bW3cm9ttLUQFOiC2A5p7hBXYftvPyMhYIP1Xxc=
 github.com/yoanm/go-deps-diff v0.0.0-20260507172724-1a850e415c54 h1:zIt5aJwc79+LoxZFkQ9kj0QOTuVxr2ZUjtyjF8ggiOA=
 github.com/yoanm/go-deps-diff v0.0.0-20260507172724-1a850e415c54/go.mod h1:Ekra2bW3cm9ttLUQFOiC2A5p7hBXYftvPyMhYIP1Xxc=
+github.com/yoanm/go-deps-diff v0.0.0-20260507185723-d6d010701b3d h1:G+a2zipSnrqnEE7ZfLLaSA99sux6iHTL0QDUHh4P3jE=
+github.com/yoanm/go-deps-diff v0.0.0-20260507185723-d6d010701b3d/go.mod h1:56c4pYrQnor6fAmmDscep1SVab1k7SeSJro4QDHpTbY=
