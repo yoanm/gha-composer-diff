@@ -181,6 +181,7 @@ linters:
           - gosec
           - noctx
           - wrapcheck
+          - err113
         path: _test\.go
       - linters:
           - exhaustruct
@@ -188,9 +189,6 @@ linters:
       - linters:
           - errcheck
         path: benchmark_test\.go
-      - linters:
-          - err113
-        path: _test\.go
     paths:
       - third_party$
       - builtin$
