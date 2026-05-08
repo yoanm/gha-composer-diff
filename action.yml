@@ -30,8 +30,8 @@ runs:
     # Even if an input is marked as "required", an empty value (or no value) may be passed !
     - uses: actions/github-script@v7
       env:
-        INPUT_LOCK-FILE: ${{ inputs.lock-path }}
-        INPUT_REQ-FILE: ${{ inputs.req-path }}
+        INPUT_LOCK-PATH: ${{ inputs.lock-path }}
+        INPUT_REQ-PATH: ${{ inputs.req-path }}
       with:
         script: |
           core.info('Validate inputs');
@@ -43,8 +43,8 @@ runs:
       id: info
       env:
         INPUT_ACTION-PATH: ${{ github.action_path }}
-        INPUT_LOCK-FILE: ${{ inputs.lock-path }}
-        INPUT_REQ-FILE: ${{ inputs.req-path }}
+        INPUT_LOCK-PATH: ${{ inputs.lock-path }}
+        INPUT_REQ-PATH: ${{ inputs.req-path }}
         INPUT_CURRENT-REF: ${{ github.event.pull_request.head.sha || github.event.after }}
         INPUT_PREVIOUS-REF: ${{ github.event.pull_request.base.sha || github.event.before }}
       with:
