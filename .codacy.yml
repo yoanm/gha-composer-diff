@@ -6,5 +6,3 @@ engines:
     exclude_paths:
       - "**_test.go"
     skipDuplicateFiles: true
-exclude_paths:
-  - "go-wrapper/README.md" # Auto-generated doc

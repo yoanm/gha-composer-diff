@@ -7,13 +7,6 @@ else
     SED_INPLACE_OPTION=-i
 endif
 
-define buildDocForSubPackage
-	echo "Generate doc for $(1) sub-package ..."; \
-	cd $(1) > /dev/null; \
-	goreadme -constants -variabless -types -methods -functions -factories -recursive > README.md; \
-	sed ${SED_INPLACE_OPTION} -E "s/]\((\/.+)\.go/](.\1.go/g" README.md; \
-	cd - > /dev/null;
-endef
 
 .DEFAULT_GOAL = default
 
@@ -43,15 +36,6 @@ configure-test-env: ## 🤖 Install required libraries for test environment (gol
 configure-test-env: configure-dev-env
 configure-test-env:
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11
-
-##—— 📝 Documentation —————————————————————————————————————————————
-.PHONY: build-doc
-.SILENT: build-doc
-build-doc: ## 🗜️  Build packages doc
-build-doc:
-	echo "Generate doc for main package ..."
-	cd go-wrapper
-	goreadme -constants -variabless -types -methods -functions -factories -recursive > DOC.md
 
 ##—— 🐹 Golang —————————————————————————————————————————————
 .PHONY: build
