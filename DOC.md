@@ -30,7 +30,7 @@ const (
 
 ## Sub Packages
 
-* [cmd/gha-deps-diff](./cmd/gha-deps-diff)
+* [cmd/gha-deps-diff](./cmd/gha-composer-diff)
 
 ---
 Readme created from Go doc with [goreadme](https://github.com/posener/goreadme)

@@ -1,10 +1,10 @@
 /DOC.md                         -diff linguist-generated=true
-/cmd/gha-deps-diff/README.md    -diff linguist-generated=true
+/cmd/gha-composer-diff/README.md    -diff linguist-generated=true
 /bin/*                          -diff linguist-generated=true
 
 # Ignore all test and documentation for archive
 /DOC.md                         export-ignore
-/cmd/gha-deps-diff/README.md    export-ignore
+/cmd/gha-composer-diff/README.md    export-ignore
 /.github                        export-ignore
 /.gitattributes                 export-ignore
 /.gitignore                     export-ignore

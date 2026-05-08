@@ -52,7 +52,7 @@ build-doc:
 	echo "Generate doc for main package ..."
 	goreadme -constants -variabless -types -methods -functions -factories -recursive > DOC.md
 	# Generate doc for sub-packages
-	find * -maxdepth 1 -mindepth 1 -type d \( -path "cmd/gha-deps-diff" \) | while IFS= read -r d; do \
+	find * -maxdepth 1 -mindepth 1 -type d \( -path "cmd/gha-composer-diff" \) | while IFS= read -r d; do \
 		$(call buildDocForSubPackage,$$d) \
 	done
 
@@ -62,17 +62,17 @@ build: ## 🗜️  Build package
 #### Use build_o="..." to specify build options
 $(eval build_o ?=)
 build:
-	go build -v -o gha-deps-diff $(build_o) cmd/gha-deps-diff/main.go
+	go build -v -o gha-composer-diff $(build_o) cmd/gha-composer-diff/main.go
 
 .PHONY: build-all
 build: ## 🗜️  Build cross-platform action binaries
 build-all:
-	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-deps-diff-windows-amd64"
-	CGO_ENABLED=1 GOOS=windows GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-deps-diff-windows-arm64"
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-deps-diff-linux-amd64"
-	CGO_ENABLED=1 GOOS=linux GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-deps-diff-linux-arm64"
-	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-deps-diff-darwin-amd64"
-	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-deps-diff-darwin-arm64"
+	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-windows-amd64"
+	CGO_ENABLED=1 GOOS=windows GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-windows-arm64"
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-linux-amd64"
+	CGO_ENABLED=1 GOOS=linux GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-linux-arm64"
+	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-darwin-amd64"
+	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-darwin-arm64"
 
 .PHONY: verify-deps
 verify-deps: ## 🗜️  Verify dependencies

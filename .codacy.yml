@@ -8,4 +8,4 @@ engines:
     skipDuplicateFiles: true
 exclude_paths:
   - "DOC.md" # Auto-generated doc
-  - "cmd/gha-deps-diff/README.md" # Auto-generated doc
+  - "cmd/gha-composer-diff/README.md" # Auto-generated doc

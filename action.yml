@@ -5,10 +5,14 @@ branding:
 description: |
   In case lock file is updated, action will output versions differences as summary
 inputs:
-  manager:
+  lock-file:
     required: true
-    description: 'Which package manager to assess (Available: \"composer\")'
-    default: "composer"
+    description: 'path to the lock file from the repository root'
+    default: 'composer.lock'
+  req-file:
+    required: true
+    description: 'path to the requirement file from the repository root'
+    default: 'composer.json'
 
 runs:
   using: "composite"
@@ -17,17 +21,19 @@ runs:
     - name: Validate inputs
       uses: actions/github-script@v7
       env:
-        INPUT_MANAGER: ${{ inputs.manager }}
+        INPUT_LOCK_FILE: ${{ inputs.lock-file }}
+        INPUT_REQ_FILE: ${{ inputs.req-file }}
       with:
         script: |
           core.info('Validate inputs');
           
-          core.getInput('manager', {required: true});
+          core.getInput('lock-file', {required: true});
+          core.getInput('req-file', {required: true});
 
     #### TODO
     #### - Manage push vs pr (for head and base sha)
-    #### - Manage req/lock file based on the manager
     #### - Manage OS + Proc (for the binary to run)
+    #### - Consider using github-script to download the files (easier/faster than a checkout, which is actually fetch under the user workspace)
 
     - name: Fetch previous files
       uses: actions/checkout@v6
@@ -35,8 +41,8 @@ runs:
         ref: ${{ github.event.pull_request.head.sha }}
         path: current
         sparse-checkout: |
-          composer.json
-          composer.lock
+          ${{ inputs.req-file }}
+          ${{ inputs.lock-file }}
 
     - name: Fetch current files
       uses: actions/checkout@v6
@@ -44,24 +50,22 @@ runs:
         ref: ${{ github.event.pull_request.base.sha }}
         path: previous
         sparse-checkout: |
-          composer.json
-          composer.lock
+          ${{ inputs.req-file }}
+          ${{ inputs.lock-file }}
         sparse-checkout-cone-mode: false
 
     - name: Perform diff
       run: |
-        ${{ github.action_path }}/bin/gha-deps-diff-linux-amd64 \
-          -previous-req previous/composer.json \
-          -previous-lock previous/composer.lock \
-          -current-req current/composer.json \
-          -current-lock current/composer.lock \
+        ${{ github.action_path }}/bin/gha-composer-diff-linux-amd64 \
+          -previous-req previous/${{ inputs.req-file }} \
+          -previous-lock previous/${{ inputs.lock-file }} \
+          -current-req current/${{ inputs.req-file }} \
+          -current-lock current/${{ inputs.lock-file }} \
         > summary.md
       shell: bash
 
     - name: Build summary
-      env:
-        PACKAGE_MANAGER: ${{ inputs.manager }}
       run: |
-        echo "# 🔎 ${PACKAGE_MANAGER} packages 🔍 " >> $GITHUB_STEP_SUMMARY
+        echo "# 🔎 Composer packages 🔍 " >> $GITHUB_STEP_SUMMARY
         cat summary.md >> $GITHUB_STEP_SUMMARY
       shell: bash
