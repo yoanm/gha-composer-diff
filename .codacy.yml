@@ -7,5 +7,4 @@ engines:
       - "**_test.go"
     skipDuplicateFiles: true
 exclude_paths:
-  - "DOC.md" # Auto-generated doc
-  - "cmd/gha-composer-diff/README.md" # Auto-generated doc
+  - "go-wrapper/README.md" # Auto-generated doc

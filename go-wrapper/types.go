@@ -1,4 +1,4 @@
-package ghadepsdiff
+package main
 
 import compdiff "github.com/yoanm/go-composer-diff"
 

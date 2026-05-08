@@ -66,7 +66,7 @@ runs:
 
     - name: Perform diff
       run: |
-        ${{ github.action_path }}/bin/gha-composer-diff-linux-amd64 \
+        ${{ github.action_path }}/bin/linux-amd64-wrapper \
           -previous-req previous/${{ inputs.req-file }} \
           -previous-lock previous/${{ inputs.lock-file }} \
           -current-req current/${{ inputs.req-file }} \

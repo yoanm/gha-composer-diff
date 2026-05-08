@@ -7,9 +7,10 @@ import (
 	"log"
 	"log/slog"
 
-	compdiff "github.com/yoanm/go-composer-diff"
+	"github.com/yoanm/go-deps-diff/contract"
+	"github.com/yoanm/go-deps-diff/summary"
 
-	"ghadepsdiff"
+	compdiff "github.com/yoanm/go-composer-diff"
 )
 
 var (
@@ -21,13 +22,6 @@ var (
 )
 
 func main() {
-	err := run()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func run() error {
 	var err error
 
 	parseFlags()
@@ -36,19 +30,35 @@ func run() error {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	var cfg *ghadepsdiff.Config
+	var cfg *Config
 	if cfg, err = parseInputs(); err != nil {
-		return err
+		log.Fatal(err)
 	}
 
 	var chgSummary string
-	if chgSummary, err = ghadepsdiff.Run(cfg); err != nil {
-		return err
+	if chgSummary, err = Run(cfg); err != nil {
+		log.Fatal(err)
 	}
 
 	fmt.Println(chgSummary)
+}
 
-	return nil
+func Run(cfg *Config) (string, error) {
+	var (
+		diffMap contract.DiffMap
+		err     error
+	)
+
+	if diffMap, err = compdiff.FileDiff(cfg.Previous, cfg.Current); err != nil {
+		return "", fmt.Errorf("performing diff: %w", err)
+	}
+
+	var chgSummary string
+	if len(diffMap) > 0 {
+		chgSummary = summary.GenerateForChanges(diffMap)
+	}
+
+	return chgSummary, nil
 }
 
 func parseFlags() {
@@ -61,7 +71,7 @@ func parseFlags() {
 	flag.Parse()
 }
 
-func parseInputs() (*ghadepsdiff.Config, error) {
+func parseInputs() (*Config, error) {
 	switch {
 	case "" == previousReqFileFlag:
 		return nil, errors.New("previous requirement file is missing")
@@ -73,7 +83,7 @@ func parseInputs() (*ghadepsdiff.Config, error) {
 		return nil, errors.New("current lock file is missing")
 	}
 
-	return &ghadepsdiff.Config{
+	return &Config{
 		Previous: &compdiff.FileInput{
 			Lock:        previousLockFileFlag,
 			Requirement: previousReqFileFlag,

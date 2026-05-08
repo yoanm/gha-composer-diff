@@ -207,7 +207,8 @@ formatters:
         - standard
         - default
         - prefix(github.com/yoanm)
-        - prefix(ghadepsdiff)
+        - prefix(github.com/yoanm/go-deps-diff)
+        - prefix(github.com/yoanm/go-composer-diff)
         - blank
         - dot
       custom-order: true

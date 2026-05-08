@@ -50,11 +50,8 @@ configure-test-env:
 build-doc: ## 🗜️  Build packages doc
 build-doc:
 	echo "Generate doc for main package ..."
+	cd go-wrapper
 	goreadme -constants -variabless -types -methods -functions -factories -recursive > DOC.md
-	# Generate doc for sub-packages
-	find * -maxdepth 1 -mindepth 1 -type d \( -path "cmd/gha-composer-diff" \) | while IFS= read -r d; do \
-		$(call buildDocForSubPackage,$$d) \
-	done
 
 ##—— 🐹 Golang —————————————————————————————————————————————
 .PHONY: build
@@ -62,17 +59,17 @@ build: ## 🗜️  Build package
 #### Use build_o="..." to specify build options
 $(eval build_o ?=)
 build:
-	go build -v -o gha-composer-diff $(build_o) cmd/gha-composer-diff/main.go
+	cd go-wrapper && go build -v -o ../bin/wrapper $(build_o) .
 
 .PHONY: build-all
 build: ## 🗜️  Build cross-platform action binaries
 build-all:
-	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-windows-amd64"
-	CGO_ENABLED=1 GOOS=windows GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-windows-arm64"
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-linux-amd64"
-	CGO_ENABLED=1 GOOS=linux GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-linux-arm64"
-	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-darwin-amd64"
-	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o bin/gha-composer-diff-darwin-arm64"
+	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o ../bin/windows-amd64-wrapper"
+	CGO_ENABLED=1 GOOS=windows GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o ../bin/windows-arm64-wrapper"
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o ../bin/linux-amd64-wrapper"
+	CGO_ENABLED=1 GOOS=linux GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o ../bin/linux-arm64-wrapper"
+	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o ../bin/darwin-amd64-wrapper"
+	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o ../bin/darwin-arm64-wrapper"
 
 .PHONY: verify-deps
 verify-deps: ## 🗜️  Verify dependencies
@@ -89,26 +86,26 @@ test-go: ## 🏃 Launch go test
 #### Use gotest_o="..." to specify options
 $(eval gotest_o ?=)
 test-go:
-	go test -v $(gotest_o) ./...
+	cd go-wrapper && go test -v $(gotest_o) ./...
 
 .PHONY: test-lint
 test-lint: ## 🏃 Launch golangci-lint
 #### Use lint_o="..." to specify options
 $(eval lint_o ?=--fix)
 test-lint:
-	golangci-lint run $(lint_o) ./...
+	cd go-wrapper && golangci-lint run $(lint_o) ./...
 
 ##—— 📋 Code Quality —————————————————————————————————————————————
 .PHONY: fmt
 fmt: ## 🔧 Format code with go fmt
-	go fmt ./...
+	cd go-wrapper && go fmt ./...
 
 .PHONY: vet
 vet: ## 🔍 Run go vet (suspicious code patterns)
-	go vet ./...
+	cd go-wrapper && go vet ./...
 
 .PHONY: benchmark
 #### Use bench_o="..." to specify options
 $(eval bench_o ?=)
 benchmark: ## 🔍 Run benchmarks
-	go test -run='^$$' -bench=. -benchmem $(bench_o) ./...
+	cd go-wrapper && go test -run='^$$' -bench=. -benchmem $(bench_o) ./...
