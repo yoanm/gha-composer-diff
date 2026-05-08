@@ -124,7 +124,7 @@ runs:
           core.info('Fetch previous and current file contents');
           const [reqRepoPath, lockRepoPath] = [getInput('req-path'), getInput('lock-path')];
           const [reqFilename, lockFilename] = [path.basename(reqRepoPath), path.basename(lockRepoPath)];
-          const [prevRef, currRef] = [getInput("previous-ref"), getInput("current-ref")];
+          const [prevRef, currRef] = [getInput('previous-ref'), getInput('current-ref')];
           
           const [previousReqContent, previousLockContent, currentReqContent, currentLockContent] = await Promise.all([
             getFileContent(reqRepoPath, prevRef),
