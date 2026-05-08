@@ -88,14 +88,14 @@ runs:
       with:
         script: |
           core.debug('Fetch deps');
-          const fs = require('fs');
+          const fs = require('fs/promise');
           const path = require('path');
           const getContent = github.rest.repos.getContent;
           const [repoOwner, repoName] = [context.payload.repository.owner.login, context.payload.repository.name];
           function getInput(name) { return core.getInput(name, {required: true}) }
-          function getFileContent(path, ref) {
+          async function getFileContent(path, ref) {
             core.debug(`Fetch file content for path="${path}" and ref="${ref}"`);
-            const {data} =  getContent({owner: repoOwner, repo: repoName, path, ref});
+            const {data} = await getContent({owner: repoOwner, repo: repoName, path, ref});
             if (data.type !== 'file') {
               throw new Error(`Expected type="file" but received "${data.type}" !`);
             } else if (data.encoding !== 'base64') {
