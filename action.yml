@@ -6,11 +6,11 @@ description: |
   In case lock file is updated, action will output versions differences as step summary
 
 inputs:
-  lock-file:
+  lock-path:
     required: true
     description: 'Path to the lock file from the repository root'
     default: 'composer.lock'
-  req-file:
+  req-path:
     required: true
     description: 'Path to the requirement file from the repository root'
     default: 'composer.json'
@@ -28,64 +28,106 @@ runs:
   using: "composite"
   steps:
     # Even if an input is marked as "required", an empty value (or no value) may be passed !
-    - name: Validate inputs
-      uses: actions/github-script@v7
+    - uses: actions/github-script@v7
       env:
-        INPUT_LOCK-FILE: ${{ inputs.lock-file }}
-        INPUT_REQ-FILE: ${{ inputs.req-file }}
+        INPUT_LOCK-FILE: ${{ inputs.lock-path }}
+        INPUT_REQ-FILE: ${{ inputs.req-path }}
       with:
         script: |
           core.info('Validate inputs');
           
-          core.getInput('lock-file', {required: true});
-          core.getInput('req-file', {required: true});
+          core.getInput('lock-path', {required: true});
+          core.getInput('req-path', {required: true});
+
+    - uses: actions/github-script@v7
+      id: info
+      env:
+        INPUT_ACTION-PATH: ${{ github.action_path }}
+        INPUT_LOCK-FILE: ${{ inputs.lock-path }}
+        INPUT_REQ-FILE: ${{ inputs.req-path }}
+        INPUT_CURRENT-REF: ${{ github.event.pull_request.head.sha || github.event.after }}
+        INPUT_PREVIOUS-REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+      with:
+        script: |
+          core.info('Determine binary to run');
+          switch (true) {
+              case core.platform.isWindows:
+                  os = "windows";
+              case core.platform.isMacOS:
+                  os = "darwin";
+              case core.platform.isLinux:
+                  os = "linux";
+              default:
+                  core.setFailed(`Unsupported platform: ${core.platform.platform}`);
+          }
+          switch (true) {
+            case core.arch === 'x64':
+                  arch = "amd64";
+            case core.arch === 'arm64':
+                  arch = "arm64";
+            default:
+              core.setFailed(`Unsupported architecture: ${core.arch}`);
+          }
+          
+          core.setOutput('binary', toPlatformPath(core.getInput('action-path') + '/bin/', os + '-' + arch + '-wrapper'));
+          
+          core.info('Set previous and current refs');
+          core.setOutput('previous-ref', core.getInput('previous-ref', {required: true}));
+          core.setOutput('current-ref', core.getInput('current-ref', {required: true}));
+          
+          core.info('Set file paths');
+          core.setOutput('req-path', core.getInput('req-path', {required: true}));
+          core.setOutput('lock-path', core.getInput('lock-path', {required: true}));
+          
 
     #### TODO
-    #### - Manage push vs pr (for head and base sha)
-    #### - Manage OS + Proc (for the binary to run)
     #### - Consider using github-script to download the files (easier/faster than a checkout, which is actually fetch under the user workspace)
-
-    - name: Fetch previous files
-      uses: actions/checkout@v6
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
-        path: current
-        sparse-checkout: |
-          ${{ inputs.req-file }}
-          ${{ inputs.lock-file }}
 
     - name: Fetch current files
       uses: actions/checkout@v6
       with:
-        ref: ${{ github.event.pull_request.base.sha }}
+        ref: ${{ steps.info.outputs.current-ref }}
+        path: current
+        sparse-checkout: |
+          ${{ steps.info.outputs.req-path }}
+          ${{ steps.info.outputs.lock-path }}
+
+    - name: Fetch previous files
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ steps.info.outputs.previous-ref }}
         path: previous
         sparse-checkout: |
-          ${{ inputs.req-file }}
-          ${{ inputs.lock-file }}
+          ${{ steps.info.outputs.req-path }}
+          ${{ steps.info.outputs.lock-path }}
         sparse-checkout-cone-mode: false
 
-    - name: Perform diff
+    - shell: bash
       run: |
-        ${{ github.action_path }}/bin/linux-amd64-wrapper \
-          -previous-req previous/${{ inputs.req-file }} \
-          -previous-lock previous/${{ inputs.lock-file }} \
-          -current-req current/${{ inputs.req-file }} \
-          -current-lock current/${{ inputs.lock-file }} \
+        # Perform diff
+        
+        ${{ steps.info.outputs.binary }} ${{ runner.debug ? "-d" : "" }} \
+          -previous-req  previous/${{ steps.info.outputs.req-path }} \
+          -previous-lock previous/${{ steps.info.outputs.lock-path }} \
+          -current-req   current/${{ steps.info.outputs.req-path }} \
+          -current-lock  current/${{ steps.info.outputs.lock-path }} \
         > summary.md
-      shell: bash
 
-    - name: Build summary
+    - shell: bash
       id: summary-builder
       run: |
+        # Build summary
+        
         echo "# 🔎 Composer packages 🔍 " > step_summary.md
         cat summary.md >> step_summary.md
         
         echo "step_summary<<__SUMMARY_EOF__" >> $GITHUB_OUTPUT
         cat step_summary.md >> $GITHUB_OUTPUT
         echo "__SUMMARY_EOF__" >> $GITHUB_OUTPUT
-      shell: bash
 
-    - name: Post summary
+    - shell: bash
       if: inputs.with-step-summary == 'true'
-      run: cat step_summary.md >> $GITHUB_STEP_SUMMARY
-      shell: bash
+      run: |
+        # Post summary
+        
+        cat step_summary.md >> $GITHUB_STEP_SUMMARY

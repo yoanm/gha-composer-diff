@@ -27,15 +27,17 @@ var (
 )
 
 func main() {
-	var err error
-
 	parseFlags()
 
 	if debugModeFlag {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	var cfg *Config
+	var (
+		cfg *Config
+		err error
+	)
+
 	if cfg, err = parseInputs(); err != nil {
 		log.Fatal(err)
 	}
