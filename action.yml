@@ -27,17 +27,28 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # Even if an input is marked as "required", an empty value (or no value) may be passed !
     - uses: actions/github-script@v9
-      id: info
       env:
-        # Even if an input is marked as "required", an empty value (or no value) may be passed ! => always check
-        INPUT_ACTION-PATH: ${{ github.action_path }}
         INPUT_LOCK-PATH: ${{ inputs.lock-path }}
         INPUT_REQ-PATH: ${{ inputs.req-path }}
       with:
         script: |
+          core.info('Validate inputs');
+          
+          core.getInput('req-path', {required: true});
+          core.getInput('lock-path', {required: true});
+
+    - uses: actions/github-script@v9
+      id: info
+      env:
+        INPUT_ACTION-PATH: ${{ github.action_path }}
+        INPUT_TMP-PATH: ${{ runner.temp }}
+      with:
+        script: |
           core.debug('Fetch deps');
           const os = require('os');
+          const path = require('path');
           function getInput(name) { return core.getInput(name, {required: true}) }
           
           core.info('Determine binary to run');
@@ -68,22 +79,21 @@ runs:
             getInput('action-path') + core.toPlatformPath('/bin/' + platform + '-' + arch + '-wrapper')
           );
           
-          core.info('Set previous and current refs');
-          core.setOutput('previous-ref', context.payload.pull_request.base.sha ?? context.payload.before);
-          core.setOutput('current-ref', context.payload.pull_request.head.sha ?? context.payload.after);
+          core.info('Set previous and current refs as inputs');
+          core.setEnv('INPUT_PREVIOUS-REF', context.payload.pull_request.base.sha ?? context.payload.before);
+          core.setEnv('INPUT_CURRENT-REF', context.payload.pull_request.head.sha ?? context.payload.after);
           
-          core.info('Set file paths');
-          core.setOutput('req-path', getInput('req-path'));
-          core.setOutput('lock-path', getInput('lock-path'));
+          core.info('Set intermediate inputs and env variables');
+          const tmpPath = getInput('tmp-path');
+          core.setEnv('INPUT_INPUT_TMP-PATH', tmpPath); // To be automatically available for the next steps
+          core.setEnv('DIFF_SUMMARY_PATH', path.join(tmpPath, 'diff_summary.md'))
+          core.setEnv('STEP_SUMMARY_PATH', path.join(tmpPath, 'step_summary.md'))
+          
           
 
     - uses: actions/github-script@v9
       id: fetch-files
       env:
-        INPUT_PREVIOUS-REF: ${{ steps.info.outputs.previous-ref }}
-        INPUT_CURRENT-REF: ${{ steps.info.outputs.current-ref }}
-        INPUT_REQ-PATH: ${{ steps.info.outputs.req-path }}
-        INPUT_LOCK-PATH: ${{ steps.info.outputs.lock-path }}
         INPUT_TMP-PATH: ${{ runner.temp }}
       with:
         script: |
@@ -133,33 +143,37 @@ runs:
             fs.writeFile(currentLockOutPath, currentLockContent)
           ])
           
-          core.debug('Configure outputs');
-          core.setOutput('previous-req', previousReqOutPath);
-          core.setOutput('previous-lock', previousLockOutPath);
-          core.setOutput('current-req', currentReqOutPath);
-          core.setOutput('current-lock', currentLockOutPath);
+          core.debug('Configure env variables');
+          core.setEnv('PREVIOUS_REQ_PATH', previousReqOutPath);
+          core.setEnv('PREVIOUS_LOCK_PATH', previousLockOutPath);
+          core.setEnv('CURRENT_REQ_PATH', currentReqOutPath);
+          core.setEnv('CURRENT_LOCK_PATH', currentLockOutPath);
 
     - shell: bash
+      env:
+        TMP_PATH: ${{ runner.temp }}
       run: |
         # Perform diff
         
         ${{ steps.info.outputs.binary }} ${{ runner.debug && '-d' || '' }} \
-          -previous-req  ${{ steps.fetch-files.outputs.previous-req }} \
-          -previous-lock ${{ steps.fetch-files.outputs.previous-lock }} \
-          -current-req   ${{ steps.fetch-files.outputs.current-req }} \
-          -current-lock  ${{ steps.fetch-files.outputs.current-lock }} \
-        > summary.md
+          -previous-req  ${PREVIOUS_REQ_PATH} \
+          -previous-lock ${PREVIOUS_LOCK_PATH} \
+          -current-req   ${CURRENT_REQ_PATH} \
+          -current-lock  ${CURRENT_LOCK_PATH} \
+        > ${DIFF_SUMMARY_PATH}
 
     - shell: bash
       id: summary-builder
+      env:
+        TMP_PATH: ${{ runner.temp }}
       run: |
         # Build summary
         
-        echo "# 🔎 Composer packages 🔍 " > step_summary.md
-        cat summary.md >> step_summary.md
+        echo "# 🔎 Composer packages 🔍 " > ${TMP_PATH}/step_summary.md
+        cat ${DIFF_SUMMARY_PATH} >> ${STEP_SUMMARY_PATH}
         
         echo "step_summary<<__SUMMARY_EOF__" >> $GITHUB_OUTPUT
-        cat step_summary.md >> $GITHUB_OUTPUT
+        cat ${STEP_SUMMARY_PATH} >> $GITHUB_OUTPUT
         echo "__SUMMARY_EOF__" >> $GITHUB_OUTPUT
 
     - shell: bash
@@ -167,4 +181,4 @@ runs:
       run: |
         # Post summary
         
-        cat step_summary.md >> $GITHUB_STEP_SUMMARY
+        cat ${STEP_SUMMARY_PATH} >> $GITHUB_STEP_SUMMARY
