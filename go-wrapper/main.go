@@ -7,8 +7,8 @@ import (
 	"log"
 	"log/slog"
 
+	summary "github.com/yoanm/go-deps-diff-summary"
 	"github.com/yoanm/go-deps-diff/contract"
-	"github.com/yoanm/go-deps-diff/summary"
 
 	compdiff "github.com/yoanm/go-composer-diff"
 )
