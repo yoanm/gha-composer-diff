@@ -37,25 +37,20 @@ runs:
       with:
         script: |
           core.info('Determine binary to run');
-          switch (core.platform.platform) {
-            case "windows":
-            case "darwin":
-            case "linux":
-              os = core.platform.platform;
-              break;
-            default:
-              core.setFailed(`Unsupported platform: ${core.platform.platform}`);
+          const os = require('os');
+          const platform = os.platform();
+          if (platform !== 'windows' && platform !== 'darwin' && platform !== 'linux') {
+            core.setFailed(`Unsupported platform: ${platform}`);
           }
-          switch (core.platform.arch) {
-            case 'x64':
-            case 'arm64':
-              arch = core.platform.arch;
-              break;
-            default:
-              core.setFailed(`Unsupported architecture: ${core.arch}`);
+          const arch = os.arch();
+          if (arch !== 'x64' && arch !== 'arm64') {
+            core.setFailed(`Unsupported architecture: ${arch}`);
           }
           
-          core.setOutput('binary', toPlatformPath(core.getInput('action-path') + '/bin/', os + '-' + arch + '-wrapper'));
+          core.setOutput(
+            'binary', 
+            core.getInput('action-path') + core.toPlatformPath('/bin/', platform + '-' + arch + '-wrapper')
+          );
           
           core.info('Set previous and current refs');
           core.setOutput('previous-ref', context.payload.pull_request.base.sha ?? context.payload.before);
@@ -64,7 +59,6 @@ runs:
           core.info('Set file paths');
           core.setOutput('req-path', core.getInput('req-path', {required: true}));
           core.setOutput('lock-path', core.getInput('lock-path', {required: true}));
-          
           
 
     #### TODO
