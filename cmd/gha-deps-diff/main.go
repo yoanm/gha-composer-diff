@@ -7,6 +7,8 @@ import (
 	"log"
 	"log/slog"
 
+	compdiff "github.com/yoanm/go-composer-diff"
+
 	"ghadepsdiff"
 )
 
@@ -72,12 +74,11 @@ func parseInputs() (*ghadepsdiff.Config, error) {
 	}
 
 	return &ghadepsdiff.Config{
-		Manager: ghadepsdiff.ComposerManager,
-		Previous: ghadepsdiff.PkgManagerInput{
+		Previous: &compdiff.FileInput{
 			Lock:        previousLockFileFlag,
 			Requirement: previousReqFileFlag,
 		},
-		Current: ghadepsdiff.PkgManagerInput{
+		Current: &compdiff.FileInput{
 			Lock:        currentLockFileFlag,
 			Requirement: currentReqFileFlag,
 		},

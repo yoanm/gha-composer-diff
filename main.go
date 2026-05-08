@@ -2,30 +2,19 @@ package ghadepsdiff
 
 import (
 	"fmt"
-	"os"
 
-	depsdiff "github.com/yoanm/go-deps-diff"
-	"github.com/yoanm/go-deps-diff/shared"
+	compdiff "github.com/yoanm/go-composer-diff"
+	"github.com/yoanm/go-deps-diff/contract"
 	"github.com/yoanm/go-deps-diff/summary"
 )
 
 func Run(cfg *Config) (string, error) {
 	var (
-		inputPrevious *depsdiff.PkgManagerInput
-		inputCurrent  *depsdiff.PkgManagerInput
-		err           error
+		diffMap contract.DiffMap
+		err     error
 	)
 
-	if inputPrevious, err = loadFiles(cfg.Previous.Requirement, cfg.Previous.Lock); err != nil {
-		return "", fmt.Errorf("reading previous files: %w", err)
-	}
-
-	if inputCurrent, err = loadFiles(cfg.Current.Requirement, cfg.Current.Lock); err != nil {
-		return "", fmt.Errorf("reading current files: %w", err)
-	}
-
-	var diffMap shared.DiffMap
-	if diffMap, err = performDiff(cfg, inputPrevious, inputCurrent); err != nil {
+	if diffMap, err = compdiff.FileDiff(cfg.Previous, cfg.Current); err != nil {
 		return "", fmt.Errorf("performing diff: %w", err)
 	}
 
@@ -35,30 +24,4 @@ func Run(cfg *Config) (string, error) {
 	}
 
 	return chgSummary, nil
-}
-
-func loadFiles(reqPath, lockPath string) (*depsdiff.PkgManagerInput, error) {
-	previousReqContent, err := os.ReadFile(reqPath)
-	if err != nil {
-		return nil, fmt.Errorf("reading requirement file: %w", err)
-	}
-
-	previousLockContent, err := os.ReadFile(lockPath)
-	if err != nil {
-		return nil, fmt.Errorf("reading lock file: %w", err)
-	}
-
-	return &depsdiff.PkgManagerInput{
-		Lock:        previousLockContent,
-		Requirement: previousReqContent,
-	}, nil
-}
-
-func performDiff(cfg *Config, prev *depsdiff.PkgManagerInput, curr *depsdiff.PkgManagerInput) (shared.DiffMap, error) {
-	switch cfg.Manager {
-	case ComposerManager:
-		return depsdiff.ComposerDiff(prev, curr)
-	default:
-		return nil, fmt.Errorf("unknown manager: %s", cfg.Manager)
-	}
 }
