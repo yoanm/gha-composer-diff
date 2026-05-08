@@ -106,7 +106,7 @@ runs:
       run: |
         # Perform diff
         
-        ${{ steps.info.outputs.binary }} ${{ runner.debug ? "-d" : "" }} \
+        ${{ steps.info.outputs.binary }} ${{ runner.debug && '-d' || '' }} \
           -previous-req  previous/${{ steps.info.outputs.req-path }} \
           -previous-lock previous/${{ steps.info.outputs.lock-path }} \
           -current-req   current/${{ steps.info.outputs.req-path }} \
