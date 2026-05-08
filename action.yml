@@ -38,13 +38,26 @@ runs:
         script: |
           core.info('Determine binary to run');
           const os = require('os');
-          const platform = os.platform();
-          if (platform !== 'windows' && platform !== 'darwin' && platform !== 'linux') {
-            core.setFailed(`Unsupported platform: ${platform}`);
+          let platform = os.platform();
+          switch (platform) {
+            case 'win32':
+              platform = 'windows';
+              break;
+            case 'darwin':
+            case 'linux':
+              break;
+            default:
+              core.setFailed(`Unsupported architecture: ${arch}`);
           }
-          const arch = os.arch();
-          if (arch !== 'x64' && arch !== 'arm64') {
-            core.setFailed(`Unsupported architecture: ${arch}`);
+          let arch = os.arch();
+          switch (arch) {
+            case 'x64':
+              arch = 'amd64';
+              break;
+            case 'arm64':
+              break;
+            default:
+               core.setFailed(`Unsupported architecture: ${arch}`);
           }
           
           core.setOutput(
