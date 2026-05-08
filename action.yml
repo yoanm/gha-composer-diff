@@ -162,22 +162,22 @@ runs:
         # Perform diff
         
         ${{ steps.info.outputs.binary }} ${{ runner.debug && '-d' || '' }} \
-          -previous-req  ${PREVIOUS_REQ_PATH} \
-          -previous-lock ${PREVIOUS_LOCK_PATH} \
-          -current-req   ${CURRENT_REQ_PATH} \
-          -current-lock  ${CURRENT_LOCK_PATH} \
-        > ${DIFF_SUMMARY_PATH}
+          -previous-req  "${{ env.PREVIOUS_REQ_PATH }}" \
+          -previous-lock "${{ env.PREVIOUS_LOCK_PATH }}" \
+          -current-req   "${{ env.CURRENT_REQ_PATH }}" \
+          -current-lock  "${{ env.CURRENT_LOCK_PATH }}" \
+        > "${{ env.DIFF_SUMMARY_PATH }}"
 
     - shell: bash
       id: summary-builder
       run: |
         # Build summary
         
-        echo "# 🔎 Composer packages 🔍 " > ${STEP_SUMMARY_PATH}
-        cat ${DIFF_SUMMARY_PATH} >> ${STEP_SUMMARY_PATH}
+        echo "# 🔎 Composer packages 🔍 " > "${{ env.STEP_SUMMARY_PATH }}"
+        cat "${{ env.DIFF_SUMMARY_PATH }}" >> "${{ env.STEP_SUMMARY_PATH }}"
         
         echo "step_summary<<__SUMMARY_EOF__" >> $GITHUB_OUTPUT
-        cat ${STEP_SUMMARY_PATH} >> $GITHUB_OUTPUT
+        cat "${{ env.STEP_SUMMARY_PATH }}" >> $GITHUB_OUTPUT
         echo "__SUMMARY_EOF__" >> $GITHUB_OUTPUT
 
     - shell: bash
@@ -185,4 +185,4 @@ runs:
       run: |
         # Post summary
         
-        cat ${STEP_SUMMARY_PATH} >> $GITHUB_STEP_SUMMARY
+        cat "${{ env.STEP_SUMMARY_PATH }}" >> $GITHUB_STEP_SUMMARY
