@@ -3,16 +3,26 @@ branding:
   icon: 'package'
   color: 'orange'
 description: |
-  In case lock file is updated, action will output versions differences as summary
+  In case lock file is updated, action will output versions differences as step summary
+
 inputs:
   lock-file:
     required: true
-    description: 'path to the lock file from the repository root'
+    description: 'Path to the lock file from the repository root'
     default: 'composer.lock'
   req-file:
     required: true
-    description: 'path to the requirement file from the repository root'
+    description: 'Path to the requirement file from the repository root'
     default: 'composer.json'
+  with-step-summary:
+    required: true
+    description: 'Whether to output the summary in the step summary'
+    default: true
+
+outputs:
+  summary:
+    value: ${{ steps.summary-builder.outputs.step_summary }}
+    description: 'Summary of the differences between the previous and current files'
 
 runs:
   using: "composite"
@@ -65,7 +75,17 @@ runs:
       shell: bash
 
     - name: Build summary
+      id: summary-builder
       run: |
-        echo "# 🔎 Composer packages 🔍 " >> $GITHUB_STEP_SUMMARY
-        cat summary.md >> $GITHUB_STEP_SUMMARY
+        echo "# 🔎 Composer packages 🔍 " > step_summary.md
+        cat summary.md >> step_summary.md
+        
+        echo "step_summary<<__SUMMARY_EOF__" >> GITHUB_OUTPUT
+        cat step_summary.md >> GITHUB_OUTPUT
+        echo "__SUMMARY_EOF__" >> GITHUB_OUTPUT
+      shell: bash
+
+    - name: Post summary
+      if: inputs.with-step-summary == 'true'
+      run: cat step_summary.md >> $GITHUB_STEP_SUMMARY
       shell: bash
