@@ -184,3 +184,16 @@ runs:
         # Post summary
         
         cat "${{ steps.info.outputs.step-summary-path }}" >> $GITHUB_STEP_SUMMARY
+        
+
+    - shell: bash
+      continue-on-error: true
+      run: |
+        # Cleaning
+        
+        rm "${{ steps.fetch-files.outputs.previous-req-path }}" || true
+        rm "${{ steps.fetch-files.outputs.previous-lock-path }}" || true
+        rm "${{ steps.fetch-files.outputs.current-req-path }}" || true
+        rm "${{ steps.fetch-files.outputs.current-lock-path }}" || true
+        rm "${{ steps.info.outputs.diff-summary-path }}" || true
+        rm "${{ steps.info.outputs.step-summary-path }}" || true
