@@ -36,8 +36,11 @@ runs:
         INPUT_REQ-PATH: ${{ inputs.req-path }}
       with:
         script: |
-          core.info('Determine binary to run');
+          core.debug('Fetch deps');
           const os = require('os');
+          function getInput(name) { return core.getInput(name, {required: true}) }
+          
+          core.info('Determine binary to run');
           let platform = os.platform();
           switch (platform) {
             case 'win32':
@@ -62,7 +65,7 @@ runs:
           
           core.setOutput(
             'binary', 
-            core.getInput('action-path') + core.toPlatformPath('/bin/' + platform + '-' + arch + '-wrapper')
+            getInput('action-path') + core.toPlatformPath('/bin/' + platform + '-' + arch + '-wrapper')
           );
           
           core.info('Set previous and current refs');
@@ -70,41 +73,81 @@ runs:
           core.setOutput('current-ref', context.payload.pull_request.head.sha ?? context.payload.after);
           
           core.info('Set file paths');
-          core.setOutput('req-path', core.getInput('req-path', {required: true}));
-          core.setOutput('lock-path', core.getInput('lock-path', {required: true}));
+          core.setOutput('req-path', getInput('req-path'));
+          core.setOutput('lock-path', getInput('lock-path'));
           
 
-    #### TODO
-    #### - Consider using github-script to download the files (easier/faster than a checkout, which is actually fetch under the user workspace)
-
-    - name: Fetch current files
-      uses: actions/checkout@v6
+    - uses: actions/github-script@v9
+      id: fetch-files
+      env:
+        INPUT_PREVIOUS-REF: ${{ steps.info.outputs.previous-ref }}
+        INPUT_CURRENT-REF: ${{ steps.info.outputs.current-ref }}
+        INPUT_REQ-PATH: ${{ steps.info.outputs.req-path }}
+        INPUT_LOCK-PATH: ${{ steps.info.outputs.lock-path }}
+        INPUT_TMP-PATH: ${{ runner.temp }}
       with:
-        ref: ${{ steps.info.outputs.current-ref }}
-        path: current
-        sparse-checkout: |
-          ${{ steps.info.outputs.req-path }}
-          ${{ steps.info.outputs.lock-path }}
-
-    - name: Fetch previous files
-      uses: actions/checkout@v6
-      with:
-        ref: ${{ steps.info.outputs.previous-ref }}
-        path: previous
-        sparse-checkout: |
-          ${{ steps.info.outputs.req-path }}
-          ${{ steps.info.outputs.lock-path }}
-        sparse-checkout-cone-mode: false
+        script: |
+          core.debug('Fetch deps');
+          const fs = require('fs');
+          const path = require('path');
+          const getContent = github.rest.repos.getContent;
+          const [repoOwner, repoName] = [context.payload.repository.owner.login, context.payload.repository.name];
+          function getInput(name) { return core.getInput(name, {required: true}) }
+          function getFileContent(path, ref) {
+            core.debug(`Fetch file content for path="${path}" and ref="${ref}"`);
+            const {data} =  getContent({owner: repoOwner, repo: repoName, path, ref});
+            if (data.type !== 'file') {
+              throw new Error(`Expected type="file" but received "${data.type}" !`);
+            } else if (data.encoding !== 'base64') {
+              throw new Error(`Expected base64 encoded file but received "${data.encoding}" !`);
+            }
+            
+            return Buffer.from(data.content, 'base64').toString('utf-8');
+          }
+          
+          core.info('Fetch previous and current file contents');
+          const [reqRepoPath, lockRepoPath] = [getInput("req-path"), getInput("lock-path")];
+          const [reqFilename, lockFilename] = [path.basename(reqRepoPath), path.basename(lockRepoPath)];
+          const [prevRef, currRef] = [getInput("previous-ref"), getInput("current-ref")];
+          
+          const [previousReqContent, previousLockContent, currentReqContent, currentLockContent] = await Promise.all([
+            getFileContent(reqRepoPath, prevRef),
+            getFileContent(lockRepoPath, prevRef),
+            getFileContent(reqRepoPath, currRef),
+            getFileContent(lockRepoPath, currRef)
+          ]);
+          
+          core.info('Write files to disk');
+          const basePath = getInput('tmp-path');
+          const [previousReqOutPath, previousLockOutPath, currentReqOutPath, currentLockOutPath] = [
+            path.join(basePath, "previous-" + reqFilename),
+            path.join(basePath, "previous-" + lockFilename),
+            path.join(basePath, "current-" + reqFilename),
+            path.join(basePath, "current-" + lockFilename)
+          ]
+          
+          await Promise.all([
+            fs.writeFile(previousReqOutPath, previousReqContent),
+            fs.writeFile(previousLockOutPath, previousLockContent),
+            fs.writeFile(currentReqOutPath, currentReqContent),
+            fs.writeFile(currentLockOutPath, currentLockContent)
+          ])
+          
+          core.debug('Configure outputs');
+          core.setOutput('previous-req', previousReqOutPath);
+          core.setOutput('previous-lock', previousLockOutPath);
+          core.setOutput('current-req', currentReqOutPath);
+          core.setOutput('current-lock', currentLockOutPath);
 
     - shell: bash
       run: |
         # Perform diff
         
         ${{ steps.info.outputs.binary }} ${{ runner.debug && '-d' || '' }} \
-          -previous-req  previous/${{ steps.info.outputs.req-path }} \
-          -previous-lock previous/${{ steps.info.outputs.lock-path }} \
-          -current-req   current/${{ steps.info.outputs.req-path }} \
-          -current-lock  current/${{ steps.info.outputs.lock-path }} \
+          -previous-req  ${{ steps.fetch-files.outputs.previous-req }} \
+          -previous-lock ${{ steps.fetch-files.outputs.previous-lock }} \
+          -current-req   ${{ steps.fetch-files.outputs.current-req }} \
+          -current-lock  ${{ steps.fetch-files.outputs.current-lock }} \
         > summary.md
 
     - shell: bash
