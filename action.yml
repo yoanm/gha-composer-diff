@@ -21,8 +21,8 @@ runs:
     - name: Validate inputs
       uses: actions/github-script@v7
       env:
-        INPUT_LOCK_FILE: ${{ inputs.lock-file }}
-        INPUT_REQ_FILE: ${{ inputs.req-file }}
+        INPUT_LOCK-FILE: ${{ inputs.lock-file }}
+        INPUT_REQ-FILE: ${{ inputs.req-file }}
       with:
         script: |
           core.info('Validate inputs');
