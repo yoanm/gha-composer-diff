@@ -40,10 +40,6 @@ runs:
           core.info('Validate inputs');
           const reqPath = getInput('req-path');
           const lockPath = getInput('lock-path');
-          
-          core.debug('Set inputs avalaible for next github-script steps');
-          core.exportVariable('INPUT_REQ-PATH', reqPath);
-          core.exportVariable('INPUT_LOCK-PATH', lockPath);
 
     - uses: actions/github-script@v9
       id: info
@@ -87,21 +83,24 @@ runs:
           
           core.info('Set previous and current refs');
           // For next github-script steps
-          core.exportVariable('INPUT_PREVIOUS-REF', context.payload.pull_request.base.sha ?? context.payload.before);
-          core.exportVariable('INPUT_CURRENT-REF', context.payload.pull_request.head.sha ?? context.payload.after);
+          core.setOutput('previous-ref', context.payload.pull_request.base.sha ?? context.payload.before);
+          core.setOutput('current-ref', context.payload.pull_request.head.sha ?? context.payload.after);
           
-          core.debug('Set intermediate inputs and env variables');
+          core.debug('Configure outputs');
           const tmpPath = getInput('tmp-path');
-          // For next github-script steps
-          core.exportVariable('INPUT_TMP-PATH', tmpPath);
-          // For bash scripts
-          core.exportVariable('DIFF_SUMMARY_PATH', path.join(tmpPath, 'diff_summary.md'))
-          core.exportVariable('STEP_SUMMARY_PATH', path.join(tmpPath, 'step_summary.md'))
+          core.setOutput('diff-summary-path', path.join(tmpPath, 'diff_summary.md'))
+          core.setOutput('step-summary-path', path.join(tmpPath, 'step_summary.md'))
           
           
 
     - uses: actions/github-script@v9
       id: fetch-files
+      env:
+        INPUT_REQ-PATH: ${{ inputs.req-path }}
+        INPUT_LOCK-PATH: ${{ inputs.lock-path }}
+        INPUT_PREVIOUS-REF: ${{ steps.info.outputs.previous-ref }}
+        INPUT_CURRENT-REF: ${{ steps.info.outputs.current-ref }}
+        INPUT_TMP-PATH: ${{ runner.temp }}
       with:
         script: |
           core.debug('Fetch deps');
@@ -123,7 +122,7 @@ runs:
           }
           
           core.info('Fetch previous and current file contents');
-          const [reqRepoPath, lockRepoPath] = [getInput("req-path"), getInput("lock-path")];
+          const [reqRepoPath, lockRepoPath] = [getInput('req-path'), getInput('lock-path')];
           const [reqFilename, lockFilename] = [path.basename(reqRepoPath), path.basename(lockRepoPath)];
           const [prevRef, currRef] = [getInput("previous-ref"), getInput("current-ref")];
           
@@ -150,34 +149,33 @@ runs:
             fs.writeFile(currentLockOutPath, currentLockContent)
           ])
           
-          core.debug('Configure env variables');
-          // For bash scripts
-          core.exportVariable('PREVIOUS_REQ_PATH', previousReqOutPath);
-          core.exportVariable('PREVIOUS_LOCK_PATH', previousLockOutPath);
-          core.exportVariable('CURRENT_REQ_PATH', currentReqOutPath);
-          core.exportVariable('CURRENT_LOCK_PATH', currentLockOutPath);
+          core.debug('Configure outputs');
+          core.setOutput('previous-req-path', previousReqOutPath);
+          core.setOutput('previous-lock-path', previousLockOutPath);
+          core.setOutput('current-req-path', currentReqOutPath);
+          core.setOutput('current-lock-path', currentLockOutPath);
 
     - shell: bash
       run: |
         # Perform diff
         
         ${{ steps.info.outputs.binary }} ${{ runner.debug && '-d' || '' }} \
-          -previous-req  "${{ env.PREVIOUS_REQ_PATH }}" \
-          -previous-lock "${{ env.PREVIOUS_LOCK_PATH }}" \
-          -current-req   "${{ env.CURRENT_REQ_PATH }}" \
-          -current-lock  "${{ env.CURRENT_LOCK_PATH }}" \
-        > "${{ env.DIFF_SUMMARY_PATH }}"
+          -previous-req  "${{ steps.fetch-files.outputs.previous-req-path }}" \
+          -previous-lock "${{ steps.fetch-files.outputs.previous-lock-path }}" \
+          -current-req   "${{ steps.fetch-files.outputs.current-req-path }}" \
+          -current-lock  "${{ steps.fetch-files.outputs.current-lock-path }}" \
+        > "${{ steps.info.outputs.diff-summary-path }}"
 
     - shell: bash
       id: summary-builder
       run: |
         # Build summary
         
-        echo "# 🔎 Composer packages 🔍 " > "${{ env.STEP_SUMMARY_PATH }}"
-        cat "${{ env.DIFF_SUMMARY_PATH }}" >> "${{ env.STEP_SUMMARY_PATH }}"
+        echo "# 🔎 Composer packages 🔍 " > "${{ steps.info.outputs.step-summary-path }}"
+        cat "${{ steps.info.outputs.diff-summary-path }}" >> "${{ steps.info.outputs.step-summary-path }}"
         
         echo "step_summary<<__SUMMARY_EOF__" >> $GITHUB_OUTPUT
-        cat "${{ env.STEP_SUMMARY_PATH }}" >> $GITHUB_OUTPUT
+        cat "${{ steps.info.outputs.step-summary-path }}" >> $GITHUB_OUTPUT
         echo "__SUMMARY_EOF__" >> $GITHUB_OUTPUT
 
     - shell: bash
@@ -185,4 +183,4 @@ runs:
       run: |
         # Post summary
         
-        cat "${{ env.STEP_SUMMARY_PATH }}" >> $GITHUB_STEP_SUMMARY
+        cat "${{ steps.info.outputs.step-summary-path }}" >> $GITHUB_STEP_SUMMARY
