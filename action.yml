@@ -29,15 +29,21 @@ runs:
   steps:
     # Even if an input is marked as "required", an empty value (or no value) may be passed !
     - uses: actions/github-script@v9
+      env:
+        INPUT_REQ-PATH: ${{ inputs.req-path }}
+        INPUT_LOCK-PATH: ${{ inputs.lock-path }}
       with:
         script: |
           core.debug('Fetch deps');
           function getInput(name) { return core.getInput(name, {required: true}) }
           
           core.info('Validate inputs');
+          const reqPath = getInput('req-path');
+          const lockPath = getInput('lock-path');
           
-          getInput('req-path');
-          getInput('lock-path');
+          core.debug('Set inputs avalaible for next github-script steps');
+          core.setEnv('INPUT_REQ-PATH', reqPath);
+          core.setEnv('INPUT_LOCK-PATH', lockPath);
 
     - uses: actions/github-script@v9
       id: info
@@ -79,13 +85,15 @@ runs:
             getInput('action-path') + core.toPlatformPath('/bin/' + platform + '-' + arch + '-wrapper')
           );
           
-          core.info('Set previous and current refs as inputs');
+          core.info('Set previous and current refs');
+          // For next github-script steps
           core.setEnv('INPUT_PREVIOUS-REF', context.payload.pull_request.base.sha ?? context.payload.before);
           core.setEnv('INPUT_CURRENT-REF', context.payload.pull_request.head.sha ?? context.payload.after);
           
-          core.info('Set intermediate inputs and env variables');
+          core.debug('Set intermediate inputs and env variables');
           const tmpPath = getInput('tmp-path');
-          core.setEnv('INPUT_TMP-PATH', tmpPath); // To be automatically available for the next steps as input
+          // For next github-script steps
+          core.setEnv('INPUT_TMP-PATH', tmpPath);
           // For bash scripts
           core.setEnv('DIFF_SUMMARY_PATH', path.join(tmpPath, 'diff_summary.md'))
           core.setEnv('STEP_SUMMARY_PATH', path.join(tmpPath, 'step_summary.md'))
