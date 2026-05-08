@@ -1,7 +1,8 @@
 /bin/*                  -diff linguist-generated=true
 
 # Ignore all test and documentation for archive
-/go-wrapper         export-ignore
+/*.go               export-ignore
+/go.*               export-ignore
 /.github            export-ignore
 /.gitattributes     export-ignore
 /.gitignore         export-ignore

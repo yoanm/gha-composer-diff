@@ -43,7 +43,7 @@ build: ## 🗜️  Build package
 #### Use build_o="..." to specify build options
 $(eval build_o ?=)
 build:
-	cd go-wrapper && go build -v -o ../bin/wrapper $(build_o) .
+	go build -v -o ../bin/wrapper $(build_o) ./...
 
 .PHONY: build-all
 build: ## 🗜️  Build cross-platform action binaries
@@ -70,26 +70,26 @@ test-go: ## 🏃 Launch go test
 #### Use gotest_o="..." to specify options
 $(eval gotest_o ?=)
 test-go:
-	cd go-wrapper && go test -v $(gotest_o) ./...
+	go test -v $(gotest_o) ./...
 
 .PHONY: test-lint
 test-lint: ## 🏃 Launch golangci-lint
 #### Use lint_o="..." to specify options
 $(eval lint_o ?=--fix)
 test-lint:
-	cd go-wrapper && golangci-lint run $(lint_o) ./...
+	golangci-lint run $(lint_o) ./...
 
 ##—— 📋 Code Quality —————————————————————————————————————————————
 .PHONY: fmt
 fmt: ## 🔧 Format code with go fmt
-	cd go-wrapper && go fmt ./...
+	go fmt ./...
 
 .PHONY: vet
 vet: ## 🔍 Run go vet (suspicious code patterns)
-	cd go-wrapper && go vet ./...
+	go vet ./...
 
 .PHONY: benchmark
 #### Use bench_o="..." to specify options
 $(eval bench_o ?=)
 benchmark: ## 🔍 Run benchmarks
-	cd go-wrapper && go test -run='^$$' -bench=. -benchmem $(bench_o) ./...
+	go test -run='^$$' -bench=. -benchmem $(bench_o) ./...
