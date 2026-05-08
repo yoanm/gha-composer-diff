@@ -17,7 +17,7 @@ inputs:
   with-step-summary:
     required: true
     description: 'Whether to output the summary in the step summary'
-    default: true
+    default: 'true'
 
 outputs:
   summary:
@@ -29,15 +29,15 @@ runs:
   steps:
     # Even if an input is marked as "required", an empty value (or no value) may be passed !
     - uses: actions/github-script@v9
-      env:
-        INPUT_LOCK-PATH: ${{ inputs.lock-path }}
-        INPUT_REQ-PATH: ${{ inputs.req-path }}
       with:
         script: |
+          core.debug('Fetch deps');
+          function getInput(name) { return core.getInput(name, {required: true}) }
+          
           core.info('Validate inputs');
           
-          core.getInput('req-path', {required: true});
-          core.getInput('lock-path', {required: true});
+          getInput('req-path');
+          getInput('lock-path');
 
     - uses: actions/github-script@v9
       id: info
@@ -85,7 +85,8 @@ runs:
           
           core.info('Set intermediate inputs and env variables');
           const tmpPath = getInput('tmp-path');
-          core.setEnv('INPUT_INPUT_TMP-PATH', tmpPath); // To be automatically available for the next steps
+          core.setEnv('INPUT_TMP-PATH', tmpPath); // To be automatically available for the next steps as input
+          // For bash scripts
           core.setEnv('DIFF_SUMMARY_PATH', path.join(tmpPath, 'diff_summary.md'))
           core.setEnv('STEP_SUMMARY_PATH', path.join(tmpPath, 'step_summary.md'))
           
@@ -93,8 +94,6 @@ runs:
 
     - uses: actions/github-script@v9
       id: fetch-files
-      env:
-        INPUT_TMP-PATH: ${{ runner.temp }}
       with:
         script: |
           core.debug('Fetch deps');
@@ -144,14 +143,13 @@ runs:
           ])
           
           core.debug('Configure env variables');
+          // For bash scripts
           core.setEnv('PREVIOUS_REQ_PATH', previousReqOutPath);
           core.setEnv('PREVIOUS_LOCK_PATH', previousLockOutPath);
           core.setEnv('CURRENT_REQ_PATH', currentReqOutPath);
           core.setEnv('CURRENT_LOCK_PATH', currentLockOutPath);
 
     - shell: bash
-      env:
-        TMP_PATH: ${{ runner.temp }}
       run: |
         # Perform diff
         
@@ -164,12 +162,10 @@ runs:
 
     - shell: bash
       id: summary-builder
-      env:
-        TMP_PATH: ${{ runner.temp }}
       run: |
         # Build summary
         
-        echo "# 🔎 Composer packages 🔍 " > ${TMP_PATH}/step_summary.md
+        echo "# 🔎 Composer packages 🔍 " > ${STEP_SUMMARY_PATH}
         cat ${DIFF_SUMMARY_PATH} >> ${STEP_SUMMARY_PATH}
         
         echo "step_summary<<__SUMMARY_EOF__" >> $GITHUB_OUTPUT
