@@ -49,7 +49,7 @@ runs:
           
           core.setOutput(
             'binary', 
-            core.getInput('action-path') + core.toPlatformPath('/bin/', platform + '-' + arch + '-wrapper')
+            core.getInput('action-path') + core.toPlatformPath('/bin/' + platform + '-' + arch + '-wrapper')
           );
           
           core.info('Set previous and current refs');
