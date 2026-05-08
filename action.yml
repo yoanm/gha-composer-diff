@@ -80,9 +80,9 @@ runs:
         echo "# 🔎 Composer packages 🔍 " > step_summary.md
         cat summary.md >> step_summary.md
         
-        echo "step_summary<<__SUMMARY_EOF__" >> GITHUB_OUTPUT
-        cat step_summary.md >> GITHUB_OUTPUT
-        echo "__SUMMARY_EOF__" >> GITHUB_OUTPUT
+        echo "step_summary<<__SUMMARY_EOF__" >> $GITHUB_OUTPUT
+        cat step_summary.md >> $GITHUB_OUTPUT
+        echo "__SUMMARY_EOF__" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Post summary
