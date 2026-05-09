@@ -19,7 +19,7 @@ type LogHandler struct {
 
 var _ slog.Handler = (*LogHandler)(nil) // Ensure LogHandler implements slog.Handler
 
-func OverrideDefaultLogger() {
+func OverrideSlogDefaultLogger() {
 	level := slog.LevelInfo
 	if os.Getenv("RUNNER_DEBUG") == "1" {
 		level = slog.LevelDebug

@@ -22,6 +22,13 @@ inputs:
     required: true
     description: 'Current commit SHA to compare with'
     default: ${{ github.event.pull_request.head.sha || github.event.after }}
+  head-repo:
+    required: true
+    description: |
+      HEAD repository (owner/repo) to fetch the files from, in case of a pull request. 
+      It will be used to fetch the files from the head repository instead of the base repository. 
+      This is meaningful only in case of a pull request from a forked repository.
+    default: ${{ github.event.pull_request.head.repo.full_name }}
   with-step-summary:
     description: 'Whether to output the summary in the step summary'
     default: 'true'
@@ -31,7 +38,10 @@ inputs:
 
 outputs:
   summary:
-    description: 'Summary of the differences between the previous and current files'
+    description: |
+      Summary of the differences between the previous and current files, formatted in markdown.
+      In case you don't want to use the step summary, you can use this output to get the summary 
+      and use it your own way (e.g. post a comment on the pull request).
 
 runs:
   using: 'node20'

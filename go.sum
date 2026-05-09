@@ -6,5 +6,5 @@ github.com/yoanm/go-composer-diff v0.0.0-20260508144807-e09365da2702 h1:N+xZR6uc
 github.com/yoanm/go-composer-diff v0.0.0-20260508144807-e09365da2702/go.mod h1:I4/r+IjplpgAFXoBdYAUpVEClnHI1evnWHe+cMM1Gv4=
 github.com/yoanm/go-deps-diff v0.0.0-20260508142932-9156c6446c4b h1:jdpwUvXY/IDwlomzuz5oM/Ga8o2dxfqGDC23y4d838s=
 github.com/yoanm/go-deps-diff v0.0.0-20260508142932-9156c6446c4b/go.mod h1:56c4pYrQnor6fAmmDscep1SVab1k7SeSJro4QDHpTbY=
-github.com/yoanm/go-deps-diff-summary v0.0.0-20260508145028-18c0bfb206e0 h1:YaqGgg8aGxx5kDGzSTM2NzW89Mi5BRkBRF9tau5uU3c=
-github.com/yoanm/go-deps-diff-summary v0.0.0-20260508145028-18c0bfb206e0/go.mod h1:Q3QDo+NuJ29v8Pq+AD4l2WnYszxTFxtr56RMQiVFMvU=
+github.com/yoanm/go-deps-diff-summary v0.0.0-20260509183131-a44e227ee054 h1:Y1w5dQv1imhZeydrWv6iVw8cMhmJvRDtdy92wqMKIe8=
+github.com/yoanm/go-deps-diff-summary v0.0.0-20260509183131-a44e227ee054/go.mod h1:Q3QDo+NuJ29v8Pq+AD4l2WnYszxTFxtr56RMQiVFMvU=

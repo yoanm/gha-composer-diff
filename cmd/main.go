@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	sdk.OverrideDefaultLogger()
+	sdk.OverrideSlogDefaultLogger()
 
 	var (
 		cfg *wrapper.Config
@@ -35,6 +35,7 @@ func parseInputs() (*wrapper.Config, error) {
 		"req-path",
 		"previous-ref",
 		"current-ref",
+		"head-repo",
 		"with-step-summary",
 		"gh-token",
 	})
@@ -48,6 +49,7 @@ func parseInputs() (*wrapper.Config, error) {
 			inputs["req-path"],
 			inputs["previous-ref"],
 			inputs["current-ref"],
+			inputs["head-repo"],
 			inputs["with-step-summary"] == "true",
 			inputs["gh-token"],
 		),

@@ -12,6 +12,8 @@ import (
 
 	"wrapper/gha-wrapper/api"
 	"wrapper/gha-wrapper/sdk"
+
+	basewrapper "wrapper/base-wrapper"
 )
 
 type Config struct {
@@ -31,16 +33,18 @@ type ActionInputs struct {
 	reqPath         string
 	prevRef         string
 	currRef         string
+	headRepo        string
 	withStepSummary bool
 	ghToken         string // Keep this field private to avoid accidental logging !!
 }
 
-func NewActionInputs(lockPath, reqPath, prevRef, currRef string, withStepSummary bool, ghToken string) *ActionInputs {
+func NewActionInputs(lockPath, reqPath, prevRef, currRef, headRepo string, withStepSummary bool, ghToken string) *ActionInputs {
 	return &ActionInputs{
 		lockPath:        lockPath,
 		reqPath:         reqPath,
 		prevRef:         prevRef,
 		currRef:         currRef,
+		headRepo:        headRepo,
 		withStepSummary: withStepSummary,
 		ghToken:         ghToken,
 	}
@@ -65,39 +69,31 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 		diffMap contract.DiffMap
 		err     error
 	)
-	if diffMap, err = handleDiff(client, cfg); err != nil {
+
+	if diffMap, err = handleDiff(context.Background(), client, cfg); err != nil {
 		return err
-	}
-
-	if len(diffMap) == 0 {
-		slog.Info("No change found")
-
-		return nil
 	}
 
 	slog.Info(fmt.Sprintf("Found %d changes", len(diffMap)))
 
-	return handleDiffSummary(cfg, diffMap)
+	return handleDiffSummary(diffMap, cfg.inputs.withStepSummary)
 }
 
-func handleDiff(client *api.Client, cfg *Config) (contract.DiffMap, error) {
+func handleDiff(
+	ctx context.Context,
+	client *api.Client,
+	cfg *Config,
+) (contract.DiffMap, error) {
 	slog.Info("Fetching previous and current file contents...")
 
-	var (
-		fileContents map[string][]byte
-		err          error
-	)
+	fileContents, err := basewrapper.FetchFileContents(ctx, client, map[string]basewrapper.FileSpec{
+		"previous-req":  {Repo: cfg.env.ghRepository, Path: cfg.inputs.reqPath, Ref: cfg.inputs.prevRef},
+		"previous-lock": {Repo: cfg.env.ghRepository, Path: cfg.inputs.lockPath, Ref: cfg.inputs.prevRef},
 
-	fileContents, err = client.LoadMultipleFileContent(
-		context.Background(),
-		cfg.env.ghRepository,
-		map[string]api.FileSpec{
-			"previous-req":  {Path: cfg.inputs.reqPath, Ref: cfg.inputs.prevRef},
-			"previous-lock": {Path: cfg.inputs.lockPath, Ref: cfg.inputs.prevRef},
-			"current-req":   {Path: cfg.inputs.reqPath, Ref: cfg.inputs.currRef},
-			"current-lock":  {Path: cfg.inputs.lockPath, Ref: cfg.inputs.currRef},
-		},
-	)
+		// Fetch current file from the head repo ! (in case of a PR from a fork)
+		"current-req":  {Repo: cfg.inputs.headRepo, Path: cfg.inputs.reqPath, Ref: cfg.inputs.currRef},
+		"current-lock": {Repo: cfg.inputs.headRepo, Path: cfg.inputs.lockPath, Ref: cfg.inputs.currRef},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("fetching files: %w", err)
 	}
@@ -117,10 +113,10 @@ func handleDiff(client *api.Client, cfg *Config) (contract.DiffMap, error) {
 	return diffMap, nil
 }
 
-func handleDiffSummary(cfg *Config, diffMap contract.DiffMap) error {
+func handleDiffSummary(diffMap contract.DiffMap, withStepSummary bool) error {
 	slog.Info("Generating summary for changes...")
 
-	chgSummary := "# 🔎 Composer packages 🔍 \n\n" + summary.GenerateForChanges(diffMap)
+	chgSummary := summary.GenerateForChanges(diffMap, "Composer")
 
 	slog.Debug("Setting summary as action output...")
 
@@ -128,7 +124,7 @@ func handleDiffSummary(cfg *Config, diffMap contract.DiffMap) error {
 		return fmt.Errorf("setting summary as action output: %w", err)
 	}
 
-	if cfg.inputs.withStepSummary {
+	if withStepSummary {
 		slog.Info("Setting summary as step summary...")
 
 		if err := sdk.AppendStepSummary(chgSummary); err != nil {
