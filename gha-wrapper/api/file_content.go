@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -17,9 +18,14 @@ type GitHubFileResponse struct {
 	Content  string `json:"content"`
 }
 
+var (
+	ErrFileContentInvalidFileType     = errors.New("invalid response type: expected 'file'")
+	ErrFileContentUnsupportedEncoding = errors.New("unsupported encoding: expected 'base64'")
+)
+
 // LoadFileContent fetches a file content from a GitHub repository for a specific Path and reference.
 func (client *Client) LoadFileContent(ctx context.Context, repo string, path string, ref string) ([]byte, error) {
-	slog.Debug("Load file content", "path", path, "ref", ref)
+	slog.Debug("Loading file content...", "path", path, "ref", ref)
 
 	var (
 		body []byte
@@ -38,11 +44,11 @@ func (client *Client) LoadFileContent(ctx context.Context, repo string, path str
 	}
 
 	if fileResp.Type != "file" {
-		return nil, fmt.Errorf("%w, got '%s'", ErrInvalidFileType, fileResp.Type)
+		return nil, fmt.Errorf("%w, got %q", ErrFileContentInvalidFileType, fileResp.Type)
 	}
 
 	if fileResp.Encoding != "base64" {
-		return nil, fmt.Errorf("%w, got '%s'", ErrUnsupportedEncoding, fileResp.Encoding)
+		return nil, fmt.Errorf("%w, got %q", ErrFileContentUnsupportedEncoding, fileResp.Encoding)
 	}
 
 	// Decode base64 content
@@ -110,10 +116,10 @@ func (client *Client) LoadMultipleFileContent(
 		routineCount,
 		resultChan,
 		func(res fetchResult) error {
-			slog.Debug("Collecting file content", "label", res.label)
+			slog.Debug("Collecting file content...", "label", res.label)
 
 			if res.err != nil {
-				slog.Debug("Error collecting file content", "label", res.label, "error", res.err)
+				slog.Debug("Error collecting file content. Cancelling...", "label", res.label, "error", res.err)
 
 				cancelContextCb() // Stop there, no need to go further
 

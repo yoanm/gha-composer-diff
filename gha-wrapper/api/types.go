@@ -1,15 +1,7 @@
 package api
 
 import (
-	"errors"
 	"net/http"
-)
-
-// Sentinel errors for GitHub API operations.
-var (
-	ErrInvalidFileType     = errors.New("invalid response type: expected 'file'")
-	ErrUnsupportedEncoding = errors.New("unsupported encoding: expected 'base64'")
-	ErrUnexpectedStatus    = errors.New("unexpected HTTP status code from GitHub API")
 )
 
 type Client struct {

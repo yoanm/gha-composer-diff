@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,6 +29,8 @@ func NewClient(
 		baseUrl: baseUrl,
 	}
 }
+
+var ErrUnexpectedHTTPStatus = errors.New("unexpected HTTP status code from GitHub API")
 
 // fetch performs an HTTP request to the GitHub API and returns the response body as bytes.
 func (client *Client) httpGetRequest(ctx context.Context, path string) ([]byte, error) {
@@ -61,7 +64,7 @@ func (client *Client) httpGetRequest(ctx context.Context, path string) ([]byte, 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 
-		return nil, fmt.Errorf("%w: %d %s", ErrUnexpectedStatus, resp.StatusCode, string(body))
+		return nil, fmt.Errorf("%w: %d %s", ErrUnexpectedHTTPStatus, resp.StatusCode, string(body))
 	}
 
 	// Read response body

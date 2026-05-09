@@ -32,7 +32,7 @@ func GetRequiredInputs(names []string) (map[string]string, error) {
 	return res, nil
 }
 
-func AppendSummary(content string) error {
+func AppendStepSummary(content string) error {
 	if err := appendToFile(os.Getenv("GITHUB_STEP_SUMMARY"), content); err != nil {
 		return fmt.Errorf("writing to the summary file: %w", err)
 	}
@@ -40,11 +40,11 @@ func AppendSummary(content string) error {
 	return nil
 }
 
-func SetMultilineOutput(name string, content string) error {
+func AddMultilineOutput(name string, content string) error {
 	value := fmt.Sprintf("%s<<__VAR_MULILINE_EOF__\n%s\n__VAR_MULILINE_EOF__", name, content)
 
 	if err := appendToFile(os.Getenv("GITHUB_OUTPUT"), value); err != nil {
-		return fmt.Errorf("writing to the output file: %w", err)
+		return fmt.Errorf("writing %q to the output file: %w", name, err)
 	}
 
 	return nil
