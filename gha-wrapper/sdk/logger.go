@@ -1,16 +1,20 @@
 package sdk
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"sync"
 )
 
 type LogHandler struct {
-	writer   io.Writer
-	original slog.Handler
+	writer      io.Writer
+	attrHandler slog.Handler
+	mutex       *sync.Mutex
+	attrBuffer  *bytes.Buffer
 }
 
 var _ slog.Handler = (*LogHandler)(nil) // Ensure LogHandler implements slog.Handler
@@ -21,11 +25,11 @@ func OverrideDefaultLogger() {
 		level = slog.LevelDebug
 	}
 
-	writer := os.Stderr
+	attrBuffer := &bytes.Buffer{}
 	handler := &LogHandler{
-		writer: writer,
-		original: slog.NewTextHandler(
-			writer,
+		writer: os.Stderr,
+		attrHandler: slog.NewTextHandler(
+			attrBuffer,
 			&slog.HandlerOptions{ //nolint:exhaustruct // Only useful options are defined
 				Level: level,
 				ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
@@ -38,6 +42,8 @@ func OverrideDefaultLogger() {
 				},
 			},
 		),
+		mutex:      &sync.Mutex{},
+		attrBuffer: attrBuffer,
 	}
 
 	slog.SetDefault(slog.New(handler))
@@ -45,13 +51,19 @@ func OverrideDefaultLogger() {
 }
 
 func (handler *LogHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return handler.original.Enabled(ctx, level)
+	return handler.attrHandler.Enabled(ctx, level)
 }
 
 func (handler *LogHandler) Handle(ctx context.Context, record slog.Record) error {
-	var err error
+	handler.mutex.Lock()
+	defer func() {
+		handler.attrBuffer.Reset()
+		handler.mutex.Unlock()
+	}()
+
+	var msg string
 	if record.Level != slog.LevelDebug && record.Level != slog.LevelWarn && record.Level != slog.LevelError {
-		_, err = fmt.Fprint(handler.writer, record.Message)
+		msg = record.Message
 	} else {
 		var level string
 
@@ -66,21 +78,29 @@ func (handler *LogHandler) Handle(ctx context.Context, record slog.Record) error
 			panic("unexpected log level: " + record.Level.String())
 		}
 
-		_, err = fmt.Fprintf(handler.writer, "::%s::%s", level, record.Message)
+		msg = "::" + level + "::" + record.Message
 	}
 
+	// Delegate potential attributes and end of line management to the attrHandler handler
+	err := handler.attrHandler.Handle(ctx, record)
 	if err != nil {
 		return err //nolint:wrapcheck // Current logger is just a proxy
 	}
 
-	// Delegate potential attributes and end of line management to the original handler
-	return handler.original.Handle(ctx, record) //nolint:wrapcheck // Current logger is just a proxy
+	attrString := handler.attrBuffer.String()
+	if len(attrString) > 1 { // More than one char (the newline char) means there are attributes to log
+		attrString = " " + attrString // Add a space before attributes if they exist
+	}
+
+	_, err = fmt.Fprint(handler.writer, msg+attrString)
+
+	return err //nolint:wrapcheck // Current logger is just a proxy
 }
 
 func (handler *LogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return handler.original.WithAttrs(attrs)
+	return handler.attrHandler.WithAttrs(attrs)
 }
 
 func (handler *LogHandler) WithGroup(name string) slog.Handler {
-	return handler.original.WithGroup(name)
+	return handler.attrHandler.WithGroup(name)
 }

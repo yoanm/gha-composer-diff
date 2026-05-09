@@ -54,7 +54,7 @@ func TestLoadFileContent_Success(t *testing.T) {
 
 	client := api.NewClient(mock, "https://api.github.com", "test-token")
 
-	content, err := client.LoadFileContent("owner/repo", "file.txt", "main")
+	content, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	} else if !slices.Equal(content, expectedContent) {
@@ -77,7 +77,7 @@ func TestLoadFileContent_TypeNotFile(t *testing.T) {
 
 	client := api.NewClient(mock, "https://api.github.com", "test-token")
 
-	_, err := client.LoadFileContent("owner/repo", "path", "main")
+	_, err := client.LoadFileContent(t.Context(), "owner/repo", "path", "main")
 	if err == nil || !strings.Contains(err.Error(), "invalid response type") {
 		t.Errorf("expected type validation error, got: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestLoadFileContent_EncodingNotBase64(t *testing.T) {
 
 	client := api.NewClient(mock, "https://api.github.com", "test-token")
 
-	_, err := client.LoadFileContent("owner/repo", "file.txt", "main")
+	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "unsupported encoding") {
 		t.Errorf("expected encoding validation error, got: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestLoadFileContent_HTTP404(t *testing.T) {
 
 	client := api.NewClient(mock, "https://api.github.com", "test-token")
 
-	_, err := client.LoadFileContent("owner/repo", "file.txt", "main")
+	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "404") {
 		t.Errorf("expected 404 error, got: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestLoadFileContent_HTTP401(t *testing.T) {
 
 	client := api.NewClient(mock, "https://api.github.com", "test-token")
 
-	_, err := client.LoadFileContent("owner/repo", "file.txt", "main")
+	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "401") {
 		t.Errorf("expected 401 error, got: %v", err)
 	}
@@ -161,7 +161,7 @@ func TestLoadFileContent_InvalidBase64(t *testing.T) {
 
 	client := api.NewClient(mock, "https://api.github.com", "test-token")
 
-	_, err := client.LoadFileContent("owner/repo", "file.txt", "main")
+	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "failed to decode base64") {
 		t.Errorf("expected base64 error, got: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestLoadFileContent_URLConstruction(t *testing.T) {
 
 			client := api.NewClient(mock, "https://api.github.com", "test-token")
 
-			_, err := client.LoadFileContent(testCase.repo, testCase.path, testCase.ref)
+			_, err := client.LoadFileContent(t.Context(), testCase.repo, testCase.path, testCase.ref)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			} else if url != testCase.expectedURL {
@@ -236,7 +236,7 @@ func TestLoadFileContent_HeaderVerification(t *testing.T) {
 
 	client := api.NewClient(mock, "https://api.github.com", "a-token")
 
-	_, err := client.LoadFileContent("owner/repo", "file.txt", "main")
+	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -283,7 +283,7 @@ func TestLoadFileContent_VariousContentTypes(t *testing.T) {
 
 			client := api.NewClient(mock, "https://api.github.com", "a-token")
 
-			content, err := client.LoadFileContent("owner/repo", "file.txt", "main")
+			content, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			} else if string(content) != testCase.content {

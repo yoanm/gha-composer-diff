@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 )
 
@@ -13,6 +12,10 @@ func NewClient(
 	baseUrl string,
 	token string,
 ) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
 	headers := map[string]string{
 		"Accept":               "application/vnd.github+json",
 		"X-Github-Api-Version": "2026-03-10",
@@ -27,31 +30,29 @@ func NewClient(
 }
 
 // fetch performs an HTTP request to the GitHub API and returns the response body as bytes.
-func (api *Client) httpGetRequest(path string) ([]byte, error) {
-	slog.Debug("GET request to GitHub API", "baseUrl", api.baseUrl, "path", path)
-
+func (client *Client) httpGetRequest(ctx context.Context, path string) ([]byte, error) {
 	var (
 		req *http.Request
 		err error
 	)
 
 	// Create HTTP request
-	if req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, api.baseUrl+path, nil); err != nil {
+	if req, err = http.NewRequestWithContext(ctx, http.MethodGet, client.baseUrl+path, nil); err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	// Add GitHub token for authentication
-	if api.token != "" {
-		req.Header.Set("Authorization", "Bearer "+api.token)
+	if client.token != "" {
+		req.Header.Set("Authorization", "Bearer "+client.token)
 	}
 
-	for key, value := range api.headers {
+	for key, value := range client.headers {
 		req.Header.Set(key, value)
 	}
 
 	// Execute the request
 	var resp *http.Response
-	if resp, err = api.client.Do(req); err != nil {
+	if resp, err = client.client.Do(req); err != nil {
 		return nil, fmt.Errorf("failed to fetch file from GitHub API: %w", err)
 	}
 	defer resp.Body.Close()
