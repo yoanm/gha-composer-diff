@@ -1,4 +1,4 @@
-module main
+module ghacomposerdiff
 
 go 1.26.2
 

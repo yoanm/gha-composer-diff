@@ -14,186 +14,22 @@ inputs:
     required: true
     description: 'Path to the requirement file from the repository root'
     default: 'composer.json'
-  with-step-summary:
+  previous-ref:
     required: true
+    description: 'Previous commit SHA to compare with'
+    default: ${{ github.event.pull_request.base.sha ?? github.event.before }}
+  current-ref:
+    required: true
+    description: 'Current commit SHA to compare with'
+    default: ${{ github.event.pull_request.head.sha ?? github.event.after }}
+  with-step-summary:
     description: 'Whether to output the summary in the step summary'
     default: 'true'
 
 outputs:
   summary:
-    value: ${{ steps.summary-builder.outputs.step_summary }}
     description: 'Summary of the differences between the previous and current files'
 
 runs:
-  using: "composite"
-  steps:
-    # Even if an input is marked as "required", an empty value (or no value) may be passed !
-    - uses: actions/github-script@v9
-      env:
-        INPUT_REQ-PATH: ${{ inputs.req-path }}
-        INPUT_LOCK-PATH: ${{ inputs.lock-path }}
-      with:
-        script: |
-          core.debug('Fetch deps');
-          function getInput(name) { return core.getInput(name, {required: true}) }
-          
-          core.info('Validate inputs');
-          const reqPath = getInput('req-path');
-          const lockPath = getInput('lock-path');
-
-    - uses: actions/github-script@v9
-      id: info
-      env:
-        INPUT_ACTION-PATH: ${{ github.action_path }}
-        INPUT_TMP-PATH: ${{ runner.temp }}
-      with:
-        script: |
-          core.debug('Fetch deps');
-          const os = require('os');
-          const path = require('path');
-          function getInput(name) { return core.getInput(name, {required: true}) }
-          
-          core.info('Determine binary to run');
-          let platform = os.platform();
-          switch (platform) {
-            case 'win32':
-              platform = 'windows';
-              break;
-            case 'darwin':
-            case 'linux':
-              break;
-            default:
-              core.setFailed(`Unsupported architecture: ${arch}`);
-          }
-          let arch = os.arch();
-          switch (arch) {
-            case 'x64':
-              arch = 'amd64';
-              break;
-            case 'arm64':
-              break;
-            default:
-               core.setFailed(`Unsupported architecture: ${arch}`);
-          }
-          
-          core.setOutput(
-            'binary', 
-            getInput('action-path') + core.toPlatformPath('/bin/' + platform + '-' + arch + '-wrapper')
-          );
-          
-          core.info('Set previous and current refs');
-          // For next github-script steps
-          core.setOutput('previous-ref', context.payload.pull_request.base.sha ?? context.payload.before);
-          core.setOutput('current-ref', context.payload.pull_request.head.sha ?? context.payload.after);
-          
-          core.debug('Configure outputs');
-          const tmpPath = getInput('tmp-path');
-          core.setOutput('diff-summary-path', path.join(tmpPath, 'diff_summary.md'))
-          core.setOutput('step-summary-path', path.join(tmpPath, 'step_summary.md'))
-          
-          
-
-    - uses: actions/github-script@v9
-      id: fetch-files
-      env:
-        INPUT_REQ-PATH: ${{ inputs.req-path }}
-        INPUT_LOCK-PATH: ${{ inputs.lock-path }}
-        INPUT_PREVIOUS-REF: ${{ steps.info.outputs.previous-ref }}
-        INPUT_CURRENT-REF: ${{ steps.info.outputs.current-ref }}
-        INPUT_TMP-PATH: ${{ runner.temp }}
-      with:
-        script: |
-          core.debug('Fetch deps');
-          const fs = require('fs').promises;
-          const path = require('path');
-          const getContent = github.rest.repos.getContent;
-          const [repoOwner, repoName] = [context.payload.repository.owner.login, context.payload.repository.name];
-          function getInput(name) { return core.getInput(name, {required: true}) }
-          async function getFileContent(path, ref) {
-            core.debug(`Fetch file content for path="${path}" and ref="${ref}"`);
-            const {data} = await getContent({owner: repoOwner, repo: repoName, path, ref});
-            if (data.type !== 'file') {
-              throw new Error(`Expected type="file" but received "${data.type}" !`);
-            } else if (data.encoding !== 'base64') {
-              throw new Error(`Expected base64 encoded file but received "${data.encoding}" !`);
-            }
-            
-            return Buffer.from(data.content, 'base64').toString('utf-8');
-          }
-          
-          core.info('Fetch previous and current file contents');
-          const [reqRepoPath, lockRepoPath] = [getInput('req-path'), getInput('lock-path')];
-          const [reqFilename, lockFilename] = [path.basename(reqRepoPath), path.basename(lockRepoPath)];
-          const [prevRef, currRef] = [getInput('previous-ref'), getInput('current-ref')];
-          
-          const [previousReqContent, previousLockContent, currentReqContent, currentLockContent] = await Promise.all([
-            getFileContent(reqRepoPath, prevRef),
-            getFileContent(lockRepoPath, prevRef),
-            getFileContent(reqRepoPath, currRef),
-            getFileContent(lockRepoPath, currRef)
-          ]);
-          
-          core.info('Write files to disk');
-          const basePath = getInput('tmp-path');
-          const [previousReqOutPath, previousLockOutPath, currentReqOutPath, currentLockOutPath] = [
-            path.join(basePath, "previous-" + reqFilename),
-            path.join(basePath, "previous-" + lockFilename),
-            path.join(basePath, "current-" + reqFilename),
-            path.join(basePath, "current-" + lockFilename)
-          ]
-          
-          await Promise.all([
-            fs.writeFile(previousReqOutPath, previousReqContent),
-            fs.writeFile(previousLockOutPath, previousLockContent),
-            fs.writeFile(currentReqOutPath, currentReqContent),
-            fs.writeFile(currentLockOutPath, currentLockContent)
-          ])
-          
-          core.debug('Configure outputs');
-          core.setOutput('previous-req-path', previousReqOutPath);
-          core.setOutput('previous-lock-path', previousLockOutPath);
-          core.setOutput('current-req-path', currentReqOutPath);
-          core.setOutput('current-lock-path', currentLockOutPath);
-
-    - shell: bash
-      run: |
-        # Perform diff
-        
-        ${{ steps.info.outputs.binary }} ${{ runner.debug && '-d' || '' }} \
-          -previous-req  "${{ steps.fetch-files.outputs.previous-req-path }}" \
-          -previous-lock "${{ steps.fetch-files.outputs.previous-lock-path }}" \
-          -current-req   "${{ steps.fetch-files.outputs.current-req-path }}" \
-          -current-lock  "${{ steps.fetch-files.outputs.current-lock-path }}" \
-        > "${{ steps.info.outputs.diff-summary-path }}"
-
-    - shell: bash
-      id: summary-builder
-      run: |
-        # Build summary
-        
-        echo "# 🔎 Composer packages 🔍 " > "${{ steps.info.outputs.step-summary-path }}"
-        cat "${{ steps.info.outputs.diff-summary-path }}" >> "${{ steps.info.outputs.step-summary-path }}"
-        
-        echo "step_summary<<__SUMMARY_EOF__" >> $GITHUB_OUTPUT
-        cat "${{ steps.info.outputs.step-summary-path }}" >> $GITHUB_OUTPUT
-        echo "__SUMMARY_EOF__" >> $GITHUB_OUTPUT
-
-    - shell: bash
-      if: inputs.with-step-summary == 'true'
-      run: |
-        # Post summary
-        
-        cat "${{ steps.info.outputs.step-summary-path }}" >> $GITHUB_STEP_SUMMARY
-        
-
-    - shell: bash
-      continue-on-error: true
-      run: |
-        # Cleaning
-        
-        rm "${{ steps.fetch-files.outputs.previous-req-path }}" || true
-        rm "${{ steps.fetch-files.outputs.previous-lock-path }}" || true
-        rm "${{ steps.fetch-files.outputs.current-req-path }}" || true
-        rm "${{ steps.fetch-files.outputs.current-lock-path }}" || true
-        rm "${{ steps.info.outputs.diff-summary-path }}" || true
-        rm "${{ steps.info.outputs.step-summary-path }}" || true
+  using: 'node20'
+  main: 'index.js'

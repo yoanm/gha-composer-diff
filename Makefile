@@ -43,7 +43,7 @@ build: ## 🗜️  Build package
 #### Use build_o="..." to specify build options
 $(eval build_o ?=)
 build:
-	go build -v -o ../bin/wrapper $(build_o) ./...
+	go build -v -o ./bin/wrapper $(build_o) ./cmd/...
 
 .PHONY: build-all
 build: ## 🗜️  Build cross-platform action binaries
