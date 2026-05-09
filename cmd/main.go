@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,11 +25,11 @@ type actionInputs struct {
 	prevRef         string
 	currRef         string
 	withStepSummary bool
+	ghToken         string
 }
 type actionEnv struct {
 	ghRepository string
 	ghAPIUrl     string
-	ghToken      string
 }
 
 func main() {
@@ -38,24 +37,22 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	var (
-		cfg *config
-		err error
-	)
+	cfg := parseInputs()
 
-	if cfg, err = parseInputs(); err != nil {
-		log.Fatal(err)
-	}
-
-	if err = Run(cfg); err != nil {
-		log.Fatal(err)
+	if err := Run(cfg); err != nil {
+		slog.Error(err.Error())
+		os.Exit(3)
 	}
 }
 
 func Run(cfg *config) error {
 	slog.Info("Fetch previous and current file contents")
 
-	client := ghapi.NewClient(http.DefaultClient, cfg.env.ghAPIUrl, cfg.env.ghToken)
+	client := ghapi.NewClient(
+		http.DefaultClient,
+		cfg.env.ghAPIUrl,
+		cfg.inputs.ghToken,
+	)
 
 	reqRepoPath, lockRepoPath := cfg.inputs.reqPath, cfg.inputs.lockPath
 	prevRef, currRef := cfg.inputs.prevRef, cfg.inputs.currRef
@@ -128,7 +125,7 @@ func Run(cfg *config) error {
 	return nil
 }
 
-func parseInputs() (*config, error) {
+func parseInputs() *config {
 	return &config{
 		inputs: actionInputs{
 			lockPath:        ghasdk.GetRequiredInput("lock-path"),
@@ -136,11 +133,11 @@ func parseInputs() (*config, error) {
 			prevRef:         ghasdk.GetRequiredInput("previous-ref"),
 			currRef:         ghasdk.GetRequiredInput("current-ref"),
 			withStepSummary: ghasdk.GetRequiredInput("with-step-summary") == "true",
+			ghToken:         ghasdk.GetRequiredInput("gh-token"),
 		},
 		env: actionEnv{
 			ghRepository: os.Getenv("GITHUB_REPOSITORY"),
 			ghAPIUrl:     os.Getenv("GITHUB_API_URL"),
-			ghToken:      os.Getenv("GITHUB_TOKEN"),
 		},
-	}, nil
+	}
 }
