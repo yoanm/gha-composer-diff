@@ -103,7 +103,6 @@ func (client *Client) LoadMultipleFileContent(
 		},
 	)
 
-	cancelContextCb()
 	results := make(map[string][]byte)
 
 	collectErrorList := collectAllAwaitedGoRoutines(
