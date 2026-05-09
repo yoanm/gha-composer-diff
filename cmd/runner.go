@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 
 	summary "github.com/yoanm/go-deps-diff-summary"
 	"github.com/yoanm/go-deps-diff/contract"
@@ -13,6 +15,12 @@ import (
 	"ghacomposerdiff/gha-wrapper/api"
 	"ghacomposerdiff/gha-wrapper/sdk"
 )
+
+type fetchResult struct {
+	fileType string
+	content  []byte
+	err      error
+}
 
 func run(cfg *config) error {
 	slog.Info("Fetch previous and current file contents")
@@ -32,43 +40,90 @@ func run(cfg *config) error {
 		previousLockContent []byte
 		currentReqContent   []byte
 		currentLockContent  []byte
-		err                 error
 	)
 
-	slog.Debug("fetching previous requirement file")
+	const numFiles = 4
 
-	previousReqContent, err = client.LoadFileContent(repo, reqRepoPath, prevRef)
-	if err != nil {
-		return fmt.Errorf("fetching previous requirement file content: %w", err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	resultChan := make(chan fetchResult, numFiles)
+	waitGroup := sync.WaitGroup{}
+	waitGroup.Add(numFiles)
+
+	fetchFile := func(fileType string, path string, ref string) {
+		defer waitGroup.Done()
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		slog.Debug("fetching file", "type", fileType, "path", path, "ref", ref)
+		content, err := client.LoadFileContent(repo, path, ref)
+
+		resultChan <- fetchResult{
+			fileType: fileType,
+			content:  content,
+			err:      err,
+		}
 	}
 
-	slog.Debug("fetching previous lock file")
+	go fetchFile("previousReq", reqRepoPath, prevRef)
+	go fetchFile("previousLock", lockRepoPath, prevRef)
+	go fetchFile("currentReq", reqRepoPath, currRef)
+	go fetchFile("currentLock", lockRepoPath, currRef)
 
-	previousLockContent, err = client.LoadFileContent(repo, lockRepoPath, prevRef)
-	if err != nil {
-		return fmt.Errorf("fetching previous lock file content: %w", err)
+	resultCount := 0
+	for result := range resultChan {
+		resultCount++
+
+		if result.err != nil {
+			cancel()
+
+			switch result.fileType {
+			case "previousReq":
+				return fmt.Errorf("fetching previous requirement file content: %w", result.err)
+			case "previousLock":
+				return fmt.Errorf("fetching previous lock file content: %w", result.err)
+			case "currentReq":
+				return fmt.Errorf("fetching current requirement file content: %w", result.err)
+			case "currentLock":
+				return fmt.Errorf("fetching current lock file content: %w", result.err)
+			}
+		}
+
+		switch result.fileType {
+		case "previousReq":
+			previousReqContent = result.content
+		case "previousLock":
+			previousLockContent = result.content
+		case "currentReq":
+			currentReqContent = result.content
+		case "currentLock":
+			currentLockContent = result.content
+		}
+
+		if resultCount == numFiles {
+			close(resultChan)
+
+			break
+		}
 	}
 
-	slog.Debug("fetching current requirement file")
-
-	currentReqContent, err = client.LoadFileContent(repo, reqRepoPath, currRef)
-	if err != nil {
-		return fmt.Errorf("fetching current requirement file content: %w", err)
-	}
-
-	slog.Debug("fetching current lock file")
-
-	currentLockContent, err = client.LoadFileContent(repo, lockRepoPath, currRef)
-	if err != nil {
-		return fmt.Errorf("fetching current lock file content: %w", err)
-	}
+	waitGroup.Wait()
 
 	prevCfg := &compdiff.Input{Lock: previousLockContent, Requirement: previousReqContent}
 	currCfg := &compdiff.Input{Lock: currentLockContent, Requirement: currentReqContent}
 
 	slog.Info("Generating diff")
 
-	var diffMap contract.DiffMap
+	var (
+		diffMap contract.DiffMap
+		err     error
+	)
+
 	if diffMap, err = compdiff.Diff(prevCfg, currCfg); err != nil {
 		return fmt.Errorf("performing diff: %w", err)
 	}
