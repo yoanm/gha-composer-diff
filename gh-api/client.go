@@ -28,7 +28,7 @@ func NewClient(
 
 // fetch performs an HTTP request to the GitHub API and returns the response body as bytes.
 func (api *Client) httpGetRequest(path string) ([]byte, error) {
-	slog.Debug("Fetching from GitHub API", "path", path, "baseUrl", api.baseUrl)
+	slog.Debug("GET request to GitHub API", "baseUrl", api.baseUrl, "path", path)
 
 	var (
 		req *http.Request

@@ -25,13 +25,10 @@ function chooseBinary() {
             throw new Error(`Unsupported architecture: ${arch}`);
     }
 
-    return path.join('bin', platform + '-' + arch + '-wrapper')
+    return path.join(__dirname, 'bin', platform + '-' + arch + '-wrapper')
 }
 
-const res = spawnSync(path.join(__dirname, chooseBinary()), { stdio: 'inherit' })
-
-console.log(JSON.stringify(res))
-
-if (res.status !== 0) {
-    throw new Error(`Failed to execute binary, exit code ${res.status} with error: ${res.error}`);
+const {status, error} = spawnSync(chooseBinary(), { stdio: 'inherit' })
+if (status !== 0) {
+    throw new Error(`Failed to execute binary, exit code ${status} with error: ${error}`);
 }

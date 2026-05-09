@@ -30,6 +30,7 @@ type actionInputs struct {
 type actionEnv struct {
 	ghRepository string
 	ghAPIUrl     string
+	isDebug      bool
 }
 
 func main() {
@@ -46,6 +47,8 @@ func main() {
 }
 
 func Run(cfg *config) error {
+	ghasdk.OverrideDefaultLogger(cfg.env.isDebug)
+
 	slog.Info("Fetch previous and current file contents")
 
 	client := ghapi.NewClient(
@@ -138,6 +141,7 @@ func parseInputs() *config {
 		env: actionEnv{
 			ghRepository: os.Getenv("GITHUB_REPOSITORY"),
 			ghAPIUrl:     os.Getenv("GITHUB_API_URL"),
+			isDebug:      os.Getenv("RUNNER_DEBUG") == "1",
 		},
 	}
 }
