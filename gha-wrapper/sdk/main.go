@@ -1,28 +1,40 @@
-package ghasdk
+package sdk
 
 import (
 	"errors"
 	"fmt"
-	"log"
-	"log/slog"
 	"os"
 	"strings"
 )
 
-func GetRequiredInput(name string) string {
+var ErrMissingRequiredInput = errors.New("GHA input is missing")
+
+func GetRequiredInput(name string) (string, error) {
 	val := os.Getenv("INPUT_" + strings.ToUpper(name))
 	if val == "" {
-		log.Fatalf("GHA input %q is missing", name)
+		return "", fmt.Errorf("%w: %s", ErrMissingRequiredInput, name)
 	}
 
-	return val
+	return val, nil
+}
+
+func GetRequiredInputs(names []string) (map[string]string, error) {
+	res := make(map[string]string, len(names))
+	for _, name := range names {
+		val, err := GetRequiredInput(name)
+		if err != nil {
+			return nil, err
+		}
+
+		res[name] = val
+	}
+
+	return res, nil
 }
 
 func AppendSummary(content string) error {
 	if err := appendToFile(os.Getenv("GITHUB_STEP_SUMMARY"), content); err != nil {
-		slog.Debug("error while writing to the summary file", "error", err.Error())
-
-		return errors.New("error while writing to the summary file")
+		return fmt.Errorf("writing to the summary file: %w", err)
 	}
 
 	return nil
@@ -32,15 +44,14 @@ func SetMultilineOutput(name string, content string) error {
 	value := fmt.Sprintf("%s<<__VAR_MULILINE_EOF__\n%s\n__VAR_MULILINE_EOF__", name, content)
 
 	if err := appendToFile(os.Getenv("GITHUB_OUTPUT"), value); err != nil {
-		slog.Debug("error while writing to the output file", "error", err.Error())
-
-		return errors.New("error while writing to the output file")
+		return fmt.Errorf("writing to the output file: %w", err)
 	}
 
 	return nil
 }
 
 func appendToFile(filepath string, content string) error {
+	//nolint:gosec // path is controlled by upper functions (even though polluting env vars is possible)
 	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		return fmt.Errorf("opening file: %w", err)

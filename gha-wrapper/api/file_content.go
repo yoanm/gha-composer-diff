@@ -1,4 +1,4 @@
-package ghapi
+package api
 
 import (
 	"encoding/base64"

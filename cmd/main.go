@@ -1,147 +1,56 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 
-	ghapi "ghacomposerdiff/gh-api"
-	ghasdk "ghacomposerdiff/gha-sdk"
-
-	summary "github.com/yoanm/go-deps-diff-summary"
-	"github.com/yoanm/go-deps-diff/contract"
-
-	compdiff "github.com/yoanm/go-composer-diff"
+	"ghacomposerdiff/gha-wrapper/sdk"
 )
 
-type config struct {
-	inputs actionInputs
-	env    actionEnv
-}
-type actionInputs struct {
-	lockPath        string
-	reqPath         string
-	prevRef         string
-	currRef         string
-	withStepSummary bool
-	ghToken         string
-}
-type actionEnv struct {
-	ghRepository string
-	ghAPIUrl     string
-	isDebug      bool
-}
-
 func main() {
-	if os.Getenv("RUNNER_DEBUG") == "1" {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	}
-
-	cfg := parseInputs()
-
-	if err := Run(cfg); err != nil {
-		slog.Error(err.Error())
-		os.Exit(3)
-	}
-}
-
-func Run(cfg *config) error {
-	ghasdk.OverrideDefaultLogger(cfg.env.isDebug)
-
-	slog.Info("Fetch previous and current file contents")
-
-	client := ghapi.NewClient(
-		http.DefaultClient,
-		cfg.env.ghAPIUrl,
-		cfg.inputs.ghToken,
-	)
-
-	reqRepoPath, lockRepoPath := cfg.inputs.reqPath, cfg.inputs.lockPath
-	prevRef, currRef := cfg.inputs.prevRef, cfg.inputs.currRef
-	repo := cfg.env.ghRepository
+	sdk.OverrideDefaultLogger()
 
 	var (
-		previousReqContent  []byte
-		previousLockContent []byte
-		currentReqContent   []byte
-		currentLockContent  []byte
-		err                 error
+		cfg *config
+		err error
 	)
 
-	slog.Debug("fetching previous requirement file")
-
-	previousReqContent, err = client.LoadFileContent(repo, reqRepoPath, prevRef)
-	if err != nil {
-		return fmt.Errorf("fetching previous requirement file content: %w", err)
+	if cfg, err = parseInputs(); err != nil {
+		slog.Error(err.Error())
+		os.Exit(2) //nolint:mnd // exit code 2 for input parsing error
 	}
 
-	slog.Debug("fetching previous lock file")
-
-	previousLockContent, err = client.LoadFileContent(repo, lockRepoPath, prevRef)
-	if err != nil {
-		return fmt.Errorf("fetching previous lock file content: %w", err)
+	if err = run(cfg); err != nil {
+		slog.Error(err.Error())
+		os.Exit(3) //nolint:mnd // exit code 3 for execution error
 	}
-
-	slog.Debug("fetching current requirement file")
-
-	currentReqContent, err = client.LoadFileContent(repo, reqRepoPath, currRef)
-	if err != nil {
-		return fmt.Errorf("fetching current requirement file content: %w", err)
-	}
-
-	slog.Debug("fetching current lock file")
-
-	currentLockContent, err = client.LoadFileContent(repo, lockRepoPath, currRef)
-	if err != nil {
-		return fmt.Errorf("fetching current lock file content: %w", err)
-	}
-
-	prevCfg := &compdiff.Input{Lock: previousLockContent, Requirement: previousReqContent}
-	currCfg := &compdiff.Input{Lock: currentLockContent, Requirement: currentReqContent}
-
-	slog.Info("Generating diff")
-
-	var diffMap contract.DiffMap
-	if diffMap, err = compdiff.Diff(prevCfg, currCfg); err != nil {
-		return fmt.Errorf("performing diff: %w", err)
-	}
-
-	slog.Debug(fmt.Sprintf("diff generated. %d changes found", len(diffMap)))
-
-	if len(diffMap) > 0 {
-		slog.Info("Generating summary for changes")
-
-		chgSummary := "# 🔎 Composer packages 🔍 \n\n" + summary.GenerateForChanges(diffMap)
-
-		if err2 := ghasdk.SetMultilineOutput("summary", chgSummary); err2 != nil {
-			return fmt.Errorf("configuring action output \"summary\": %w", err2)
-		}
-
-		if cfg.inputs.withStepSummary {
-			if err2 := ghasdk.AppendSummary(chgSummary); err2 != nil {
-				return fmt.Errorf("appending change summary to the step summary: %w", err2)
-			}
-		}
-	}
-
-	return nil
 }
 
-func parseInputs() *config {
+func parseInputs() (*config, error) {
+	inputs, err := sdk.GetRequiredInputs([]string{
+		"lock-path",
+		"req-path",
+		"previous-ref",
+		"current-ref",
+		"with-step-summary",
+		"gh-token",
+	})
+	if err != nil {
+		return nil, err //nolint:wrapcheck // Will be logged as error right away, no need to wrap it
+	}
+
 	return &config{
-		inputs: actionInputs{
-			lockPath:        ghasdk.GetRequiredInput("lock-path"),
-			reqPath:         ghasdk.GetRequiredInput("req-path"),
-			prevRef:         ghasdk.GetRequiredInput("previous-ref"),
-			currRef:         ghasdk.GetRequiredInput("current-ref"),
-			withStepSummary: ghasdk.GetRequiredInput("with-step-summary") == "true",
-			ghToken:         ghasdk.GetRequiredInput("gh-token"),
+		inputs: &actionInputs{
+			lockPath:        inputs["lock-path"],
+			reqPath:         inputs["req-path"],
+			prevRef:         inputs["previous-ref"],
+			currRef:         inputs["current-ref"],
+			withStepSummary: inputs["with-step-summary"] == "true",
+			ghToken:         inputs["gh-token"],
 		},
-		env: actionEnv{
+		env: &actionEnv{
 			ghRepository: os.Getenv("GITHUB_REPOSITORY"),
 			ghAPIUrl:     os.Getenv("GITHUB_API_URL"),
-			isDebug:      os.Getenv("RUNNER_DEBUG") == "1",
 		},
-	}
+	}, nil
 }
