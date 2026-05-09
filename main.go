@@ -38,7 +38,13 @@ type ActionInputs struct {
 	ghToken         string // Keep this field private to avoid accidental logging !!
 }
 
-func NewActionInputs(lockPath, reqPath, prevRef, currRef, headRepo string, withStepSummary bool, ghToken string) *ActionInputs {
+func NewActionInputs(
+	lockPath, reqPath string,
+	prevRef, currRef string,
+	headRepo string,
+	withStepSummary bool,
+	ghToken string,
+) *ActionInputs {
 	return &ActionInputs{
 		lockPath:        lockPath,
 		reqPath:         reqPath,
