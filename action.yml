@@ -44,5 +44,5 @@ outputs:
       and use it your own way (e.g. post a comment on the pull request).
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'index.js'
