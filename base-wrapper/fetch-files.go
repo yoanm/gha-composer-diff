@@ -2,11 +2,17 @@ package basewrapper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"log/slog"
 
 	"wrapper/gha-wrapper/api"
+)
+
+var (
+	ErrClientRequired   = errors.New("client is required")
+	ErrNoFilesSpecified = errors.New("at least one file must be specified")
 )
 
 type FileSpec struct {
@@ -16,6 +22,14 @@ type FileSpec struct {
 }
 
 func FetchFileContents(ctx context.Context, client *api.Client, files map[string]FileSpec) (map[string][]byte, error) {
+	if client == nil {
+		return nil, fmt.Errorf("%w", ErrClientRequired)
+	}
+
+	if len(files) == 0 {
+		return nil, fmt.Errorf("%w", ErrNoFilesSpecified)
+	}
+
 	type fetchResult struct {
 		label   string
 		content []byte
@@ -29,12 +43,26 @@ func FetchFileContents(ctx context.Context, client *api.Client, files map[string
 
 	var routineIter iter.Seq[func() fetchResult] = func(yield func(func() fetchResult) bool) {
 		for label, spec := range files {
+			// Explicitly capture loop variables to avoid closure issues
+
 			callback := func() fetchResult {
-				slog.Debug("Fetching file in background...", "label", label, "path", spec.Path, "ref", spec.Ref)
+				slog.Debug(
+					"Fetching file in background...",
+					"label", label,
+					"repo", spec.Repo,
+					"path", spec.Path,
+					"ref", spec.Ref,
+				)
 
 				content, err := client.LoadFileContent(ctx, spec.Repo, spec.Path, spec.Ref)
 				if err != nil {
-					slog.Debug("Error fetching file in background. Cancelling ...", "label", label, "error", err)
+					slog.Debug(
+						"Error fetching file in background. Cancelling...",
+						"label", label,
+						"repo", spec.Repo,
+						"path", spec.Path,
+						"error", err,
+					)
 
 					cancelContextCb() // Stop there, no need to go further
 				}
