@@ -17,11 +17,11 @@ inputs:
   previous-ref:
     required: true
     description: 'Previous commit SHA to compare with'
-    default: ${{ github.event.pull_request.base.sha ?? github.event.before }}
+    default: ${{ github.event.pull_request.base.sha || github.event.before }}
   current-ref:
     required: true
     description: 'Current commit SHA to compare with'
-    default: ${{ github.event.pull_request.head.sha ?? github.event.after }}
+    default: ${{ github.event.pull_request.head.sha || github.event.after }}
   with-step-summary:
     description: 'Whether to output the summary in the step summary'
     default: 'true'

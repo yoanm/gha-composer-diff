@@ -28,4 +28,5 @@ function chooseBinary() {
     return path.join('bin', platform + '-' + arch + '-wrapper')
 }
 
-spawnSync(path.join(__dirname, chooseBinary()), { stdio: 'inherit' })
+const res = spawnSync(path.join(__dirname, chooseBinary()), { stdio: 'inherit' })
+console.log(JSON.stringify(res))
