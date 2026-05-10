@@ -41,19 +41,19 @@ configure-test-env:
 .PHONY: build
 build: ## 🗜️  Build package
 #### Use build_o="..." to specify build options
-$(eval build_o ?=)
+$(eval build_o ?=-o ./bin/wrapper)
 build:
-	go build -v -o ./bin/wrapper $(build_o) ./cmd/...
+	go build -v $(build_o) ./cmd/...
 
 .PHONY: build-all
-build: ## 🗜️  Build cross-platform action binaries
+build-all: ## 🗜️  Build cross-platform action binaries
 build-all:
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o ./bin/windows-amd64-wrapper"
-	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o ./bin/windows-arm64-wrapper"
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o ./bin/linux-amd64-wrapper"
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o ./bin/linux-arm64-wrapper"
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 make build build_o="-ldflags '-s -w' -trimpath -o ./bin/darwin-amd64-wrapper"
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 make build build_o="-ldflags '-s -w' -trimpath -o ./bin/darwin-arm64-wrapper"
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(MAKE) build build_o="-ldflags '-s -w' -trimpath -o ./bin/windows-amd64-wrapper"
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 $(MAKE) build build_o="-ldflags '-s -w' -trimpath -o ./bin/windows-arm64-wrapper"
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(MAKE) build build_o="-ldflags '-s -w' -trimpath -o ./bin/linux-amd64-wrapper"
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(MAKE) build build_o="-ldflags '-s -w' -trimpath -o ./bin/linux-arm64-wrapper"
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(MAKE) build build_o="-ldflags '-s -w' -trimpath -o ./bin/darwin-amd64-wrapper"
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(MAKE) build build_o="-ldflags '-s -w' -trimpath -o ./bin/darwin-arm64-wrapper"
 
 .PHONY: verify-deps
 verify-deps: ## 🗜️  Verify dependencies

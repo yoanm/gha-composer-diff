@@ -3,12 +3,11 @@ package wrapper
 import (
 	"context"
 	"fmt"
-	"log/slog"
-
-	summary "github.com/yoanm/go-deps-diff-summary"
-	"github.com/yoanm/go-deps-diff/contract"
-
 	compdiff "github.com/yoanm/go-composer-diff"
+	summary "github.com/yoanm/go-deps-diff-summary"
+	"github.com/yoanm/go-deps-diff-summary/markdown"
+	"github.com/yoanm/go-deps-diff/contract"
+	"log/slog"
 
 	"wrapper/gha-wrapper/api"
 	"wrapper/gha-wrapper/sdk"
@@ -34,6 +33,7 @@ type ActionInputs struct {
 	prevRef         string
 	currRef         string
 	headRepo        string
+	omitUnchanged   bool
 	withStepSummary bool
 	ghToken         string // Keep this field private to avoid accidental logging !!
 }
@@ -42,6 +42,7 @@ func NewActionInputs(
 	lockPath, reqPath string,
 	prevRef, currRef string,
 	headRepo string,
+	omitUnchanged bool,
 	withStepSummary bool,
 	ghToken string,
 ) *ActionInputs {
@@ -51,6 +52,7 @@ func NewActionInputs(
 		prevRef:         prevRef,
 		currRef:         currRef,
 		headRepo:        headRepo,
+		omitUnchanged:   omitUnchanged,
 		withStepSummary: withStepSummary,
 		ghToken:         ghToken,
 	}
@@ -80,9 +82,70 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("Found %d changes", len(diffMap)))
+	filterAndPrintNoticeWarning(diffMap, cfg)
+
+	if len(diffMap) == 0 {
+		slog.Info("No packages detected.")
+
+		return nil
+	}
+
+	slog.Info(fmt.Sprintf("Found %d packages", len(diffMap)))
 
 	return handleDiffSummary(diffMap, cfg.inputs.withStepSummary)
+}
+
+func filterAndPrintNoticeWarning(diffMap contract.DiffMap, cfg *Config) {
+	// Filter out if needed and print notice/warning
+	// Notice for unchanged abandoned packages or unchanged package with non-semver version
+	// Warning for added/updated abandoned packages and added/updated packages with non-semver version
+	noticePkgs := []*contract.PackageChange{}
+	warningPkgs := []*contract.PackageChange{}
+	for pkg, chg := range diffMap {
+		if chg.Operation.Name == contract.NoChangeOperation {
+			if cfg.inputs.omitUnchanged {
+				delete(diffMap, pkg)
+			} else if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
+				noticePkgs = append(noticePkgs, chg)
+			}
+		} else if chg.Operation.Name != contract.RemovalOperation {
+			if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
+				warningPkgs = append(warningPkgs, chg)
+			}
+		}
+	}
+	if len(noticePkgs) > 0 {
+		body := buildAnnotationBody(
+			"Following packages are unchanged but abandoned and/or not using a semver version:",
+			warningPkgs,
+		)
+		sdk.NoticeAnnotation(body, cfg.inputs.lockPath)
+	}
+
+	if len(warningPkgs) > 0 {
+		body := buildAnnotationBody(
+			"Following packages have been updated and are abandoned and/or not using a semver version.",
+			warningPkgs,
+		)
+		sdk.WarningAnnotation(body, cfg.inputs.lockPath)
+	}
+}
+
+func buildAnnotationBody(header string, warningPkgs []*contract.PackageChange) string {
+	builder := markdown.NewBuilder()
+	builder.WriteLine(header, 0)
+	for _, chg := range warningPkgs {
+		builder.WriteLine(
+			fmt.Sprintf(
+				" - %s %s",
+				summary.BuildPackageLabel(chg.Package),
+				summary.BuildVersionLabel(chg.Package.GetVersion()),
+			),
+			0,
+		)
+	}
+
+	return builder.String()
 }
 
 func handleDiff(

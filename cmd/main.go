@@ -36,6 +36,7 @@ func parseInputs() (*wrapper.Config, error) {
 		"previous-ref",
 		"current-ref",
 		"head-repo",
+		"omit-unchanged",
 		"with-step-summary",
 		"gh-token",
 	})
@@ -50,7 +51,8 @@ func parseInputs() (*wrapper.Config, error) {
 			inputs["previous-ref"],
 			inputs["current-ref"],
 			inputs["head-repo"],
-			inputs["with-step-summary"] == "true",
+			inputs["omit-unchanged"] != "false",
+			inputs["with-step-summary"] != "false",
 			inputs["gh-token"],
 		),
 		wrapper.NewActionEnv(

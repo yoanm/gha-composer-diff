@@ -8,19 +8,19 @@ description: |
 inputs:
   lock-path:
     required: true
-    description: 'Path to the lock file from the repository root'
-    default: 'composer.lock'
+    description: Path to the lock file from the repository root
+    default: composer.lock
   req-path:
     required: true
-    description: 'Path to the requirement file from the repository root'
-    default: 'composer.json'
+    description: Path to the requirement file from the repository root
+    default: composer.json
   previous-ref:
     required: true
-    description: 'Previous commit SHA to compare with'
+    description: Previous commit SHA to compare with
     default: ${{ github.event.pull_request.base.sha || github.event.before }}
   current-ref:
     required: true
-    description: 'Current commit SHA to compare with'
+    description: Current commit SHA to compare with
     default: ${{ github.event.pull_request.head.sha || github.event.after }}
   head-repo:
     required: true
@@ -29,11 +29,16 @@ inputs:
       It will be used to fetch the files from the head repository instead of the base repository. 
       This is meaningful only in case of a pull request from a forked repository.
     default: ${{ github.event.pull_request.head.repo.full_name }}
+  omit-unchanged:
+    description: |
+      Whether to take into account unchanged dependencies in the summary. By default, only changed dependencies are included.
+      Attention: skipping unchanged packages will also hide some important information like unchanged abandoned packages or unchanged packages with a non-semver version !
+    default: 'false'
   with-step-summary:
-    description: 'Whether to output the summary in the step summary'
+    description: Whether to output the summary in the step summary
     default: 'true'
   gh-token:
-    description: "A GitHub PAT used to fetch the files from the repository"
+    description: A GitHub PAT used to fetch the files from the repository
     default: ${{ github.token }}
 
 outputs:
