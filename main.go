@@ -3,11 +3,12 @@ package wrapper
 import (
 	"context"
 	"fmt"
-	compdiff "github.com/yoanm/go-composer-diff"
-	summary "github.com/yoanm/go-deps-diff-summary"
-	"github.com/yoanm/go-deps-diff-summary/markdown"
-	"github.com/yoanm/go-deps-diff/contract"
 	"log/slog"
+
+	summary "github.com/yoanm/go-deps-diff-summary"
+	"github.com/yoanm/go-deps-diff/contract"
+
+	compdiff "github.com/yoanm/go-composer-diff"
 
 	"wrapper/gha-wrapper/api"
 	"wrapper/gha-wrapper/sdk"
@@ -35,6 +36,7 @@ type ActionInputs struct {
 	headRepo        string
 	omitUnchanged   bool
 	withStepSummary bool
+	withAnnotations bool
 	ghToken         string // Keep this field private to avoid accidental logging !!
 }
 
@@ -44,6 +46,7 @@ func NewActionInputs(
 	headRepo string,
 	omitUnchanged bool,
 	withStepSummary bool,
+	withAnnotations bool,
 	ghToken string,
 ) *ActionInputs {
 	return &ActionInputs{
@@ -54,6 +57,7 @@ func NewActionInputs(
 		headRepo:        headRepo,
 		omitUnchanged:   omitUnchanged,
 		withStepSummary: withStepSummary,
+		withAnnotations: withAnnotations,
 		ghToken:         ghToken,
 	}
 }
@@ -83,16 +87,15 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 	}
 
 	if cfg.inputs.omitUnchanged {
+		slog.Info("Filtering out unchanged packages...")
+
 		for pkg, chg := range diffMap {
 			if chg.Operation.Name == contract.NoChangeOperation {
+				slog.Debug("Filtering out package: " + pkg)
 				delete(diffMap, pkg)
 			}
 		}
 	}
-	// 7th line is usually the "content-hash" line in the lock file. Most of time it will be updated so will show up
-	// on the diff. It should at least be around the content-hash line if not exactly on it.
-	// (Annotations work also if attached to unchanged line, but are less noticeable on the diff UI)
-	PrintNoticeWarning(diffMap, cfg.inputs.lockPath, 7)
 
 	if len(diffMap) == 0 {
 		slog.Info("No packages detected.")
@@ -102,63 +105,15 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 
 	slog.Info(fmt.Sprintf("Found %d packages", len(diffMap)))
 
+	if cfg.inputs.withAnnotations {
+		// 7th line is usually the "content-hash" line in the lock file. Most of time it will be updated so will show up
+		// on the diff. It should at least be around the content-hash line if not exactly on it.
+		// (Annotations work also if attached to unchanged line, but are less noticeable on the diff UI)
+		//nolint:mnd // See above
+		basewrapper.PrintNoticeWarning(diffMap, cfg.inputs.lockPath, 7)
+	}
+
 	return handleDiffSummary(diffMap, cfg.inputs.withStepSummary)
-}
-
-func PrintNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
-	// Notice for unchanged abandoned packages or unchanged package with non-semver version
-	// Warning for added/updated abandoned packages and added/updated packages with non-semver version
-	noticePkgs := []*contract.PackageChange{}
-	warningPkgs := []*contract.PackageChange{}
-	for _, chg := range diffMap {
-		if chg.Operation.Name == contract.NoChangeOperation {
-			if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
-				noticePkgs = append(noticePkgs, chg)
-			}
-		} else if chg.Operation.Name != contract.RemovalOperation {
-			if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
-				warningPkgs = append(warningPkgs, chg)
-			}
-		}
-	}
-	if len(noticePkgs) > 0 {
-		body := buildAnnotationBody(
-			"Following packages are unchanged but abandoned and/or not using a semver version:",
-			noticePkgs,
-		)
-		sdk.NoticeAnnotation(body, filepath, "Noteworthy unchanged packages", line)
-	}
-
-	if len(warningPkgs) > 0 {
-		body := buildAnnotationBody(
-			"Following packages have been updated and are abandoned and/or not using a semver version.",
-			warningPkgs,
-		)
-		sdk.WarningAnnotation(body, filepath, "Noteworthy changed packages", line)
-	}
-}
-
-func buildAnnotationBody(header string, warningPkgs []*contract.PackageChange) string {
-	builder := markdown.NewBuilder()
-	builder.WriteLine(header, 0)
-	for _, chg := range warningPkgs {
-		abandonedSymbol := ""
-		if chg.Package.IsAbandoned() {
-			abandonedSymbol = summary.AbandonedSymbol
-		}
-		builder.WriteLine(
-			fmt.Sprintf(
-				" - %s%s%s %s",
-				summary.GetPackageSymbol(chg.Package),
-				chg.Package.GetName(),
-				abandonedSymbol,
-				summary.BuildVersionLabel(chg.Package.GetVersion()),
-			),
-			0,
-		)
-	}
-
-	return builder.String()
 }
 
 func handleDiff(
@@ -195,7 +150,7 @@ func handleDiff(
 	return diffMap, nil
 }
 
-func handleDiffSummary(diffMap contract.DiffMap, withStepSummary bool) error {
+func handleDiffSummary(diffMap contract.DiffMap, asStepSummary bool) error {
 	slog.Info("Generating summary for changes...")
 
 	chgSummary := summary.GenerateForChanges(diffMap, "Composer")
@@ -206,7 +161,7 @@ func handleDiffSummary(diffMap contract.DiffMap, withStepSummary bool) error {
 		return fmt.Errorf("setting summary as action output: %w", err)
 	}
 
-	if withStepSummary {
+	if asStepSummary {
 		slog.Info("Setting summary as step summary...")
 
 		if err := sdk.AppendStepSummary(chgSummary); err != nil {

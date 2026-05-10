@@ -5,25 +5,25 @@ import (
 	"sync"
 )
 
-func RunParallelRoutines[resChan chan resChanArg, resChanArg any](
-	resultChan resChan,
-	routineIter iter.Seq[func() resChanArg],
-	collectorCb func(arg resChanArg) error,
+func RunParallelRoutines[R any, C chan R](
+	resultChan C,
+	routineIter iter.Seq[func() R],
+	collectorCb func(arg R) error,
 ) error {
 	// Trigger sub routines
 	waitGroup := sync.WaitGroup{}
 
 	routineCount := 0
-	for routine := range routineIter {
+	for res := range routineIter {
 		routineCount++
 
 		waitGroup.Add(1)
 
-		go func() {
+		go func(res func() R) {
 			defer waitGroup.Done()
 
-			resultChan <- routine()
-		}()
+			resultChan <- res()
+		}(res)
 	}
 
 	// Handle collecting results from the channel

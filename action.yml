@@ -37,6 +37,9 @@ inputs:
   with-step-summary:
     description: Whether to output the summary in the step summary
     default: 'true'
+  with-annotations:
+    description: Whether to post annotations for packages which may deserve your attention (e.g. abandoned packages, non-semver versions, etc.)
+    default: 'true'
   gh-token:
     description: A GitHub PAT used to fetch the files from the repository
     default: ${{ github.token }}

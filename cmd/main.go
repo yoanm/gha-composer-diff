@@ -38,6 +38,7 @@ func parseInputs() (*wrapper.Config, error) {
 		"head-repo",
 		"omit-unchanged",
 		"with-step-summary",
+		"with-annotations",
 		"gh-token",
 	})
 	if err != nil {
@@ -51,8 +52,10 @@ func parseInputs() (*wrapper.Config, error) {
 			inputs["previous-ref"],
 			inputs["current-ref"],
 			inputs["head-repo"],
+			//nolint:goconst // Mostly depend on the variable default behavior
 			inputs["omit-unchanged"] != "false",
 			inputs["with-step-summary"] != "false",
+			inputs["with-annotations"] != "false",
 			inputs["gh-token"],
 		),
 		wrapper.NewActionEnv(

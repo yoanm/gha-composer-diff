@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"iter"
 	"log/slog"
 
 	"wrapper/gha-wrapper/api"
@@ -41,27 +40,19 @@ func FetchFileContents(ctx context.Context, client *api.Client, files map[string
 
 	ctx, cancelContextCb := context.WithCancel(ctx)
 
-	var routineIter iter.Seq[func() fetchResult] = func(yield func(func() fetchResult) bool) {
-		for label, spec := range files {
-			// Explicitly capture loop variables to avoid closure issues
-
-			callback := func() fetchResult {
+	routineIter := MapToCallbackIterator(
+		files,
+		func(label string, spec FileSpec) func() fetchResult {
+			return func() fetchResult {
 				slog.Debug(
 					"Fetching file in background...",
-					"label", label,
-					"repo", spec.Repo,
-					"path", spec.Path,
-					"ref", spec.Ref,
+					"label", label, "repo", spec.Repo, "path", spec.Path, "ref", spec.Ref,
 				)
 
 				content, err := client.LoadFileContent(ctx, spec.Repo, spec.Path, spec.Ref)
 				if err != nil {
-					slog.Debug(
-						"Error fetching file in background. Cancelling...",
-						"label", label,
-						"repo", spec.Repo,
-						"path", spec.Path,
-						"error", err,
+					slog.Debug("Error fetching file in background. Cancelling...",
+						"label", label, "repo", spec.Repo, "path", spec.Path, "error", err,
 					)
 
 					cancelContextCb() // Stop there, no need to go further
@@ -69,12 +60,8 @@ func FetchFileContents(ctx context.Context, client *api.Client, files map[string
 
 				return fetchResult{label: label, content: content, err: err}
 			}
-
-			if !yield(callback) {
-				return
-			}
-		}
-	}
+		},
+	)
 
 	collectorCb := func(res fetchResult) error {
 		slog.Debug("Collecting file content...", "label", res.label)

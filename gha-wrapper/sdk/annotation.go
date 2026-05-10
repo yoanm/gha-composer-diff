@@ -24,17 +24,21 @@ func buildAnnotation(annoHeader string, title string, body string, file string, 
 	if len(file) > 0 {
 		parts = append(parts, "file="+file)
 	}
+
 	if line > 0 {
 		parts = append(parts, "line="+strconv.Itoa(line))
 	}
+
 	if len(title) > 0 {
 		parts = append(parts, "title="+strings.ReplaceAll(title, "\n", annotationEOL))
 	}
 
 	builder.WriteString("::" + annoHeader)
+
 	if len(parts) > 0 {
 		builder.WriteString(" " + strings.Join(parts, ","))
 	}
+
 	builder.WriteString("::" + strings.ReplaceAll(body, "\n", annotationEOL))
 
 	return builder.String()
