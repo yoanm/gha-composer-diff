@@ -1,11 +1,10 @@
 package basewrapper
 
 import (
-	"fmt"
 	"log/slog"
+	"strings"
 
 	summary "github.com/yoanm/go-deps-diff-summary"
-	"github.com/yoanm/go-deps-diff-summary/markdown"
 	"github.com/yoanm/go-deps-diff/contract"
 
 	"wrapper/gha-wrapper/sdk"
@@ -37,7 +36,8 @@ func PrintNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 
 	if len(noticePkgs) > 0 {
 		body := buildAnnotationBody(
-			"Following packages are unchanged but abandoned and/or not using a semver version:",
+			"Following packages are unchanged but abandoned ("+summary.AbandonedSymbol+") "+
+				"and/or not using a semver version ("+summary.NonSemverSymbol+"):",
 			noticePkgs,
 		)
 		sdk.NoticeAnnotation(body, filepath, "Noteworthy unchanged packages", line)
@@ -45,7 +45,8 @@ func PrintNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 
 	if len(warningPkgs) > 0 {
 		body := buildAnnotationBody(
-			"Following packages have been updated and are abandoned and/or not using a semver version.",
+			"Following packages have been updated and are abandoned ("+summary.AbandonedSymbol+") "+
+				"and/or not using a semver version ("+summary.NonSemverSymbol+"):",
 			warningPkgs,
 		)
 		sdk.WarningAnnotation(body, filepath, "Noteworthy changed packages", line)
@@ -53,8 +54,8 @@ func PrintNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 }
 
 func buildAnnotationBody(header string, warningPkgs []*contract.PackageChange) string {
-	builder := markdown.NewBuilder()
-	builder.WriteLine(header, 0)
+	builder := strings.Builder{}
+	builder.WriteString(header + "\n")
 
 	for _, chg := range warningPkgs {
 		abandonedSymbol := ""
@@ -62,15 +63,9 @@ func buildAnnotationBody(header string, warningPkgs []*contract.PackageChange) s
 			abandonedSymbol = summary.AbandonedSymbol
 		}
 
-		builder.WriteLine(
-			fmt.Sprintf(
-				" - %s%s%s %s",
-				summary.GetPackageSymbol(chg.Package),
-				chg.Package.GetName(),
-				abandonedSymbol,
+		builder.WriteString(
+			" - " + summary.GetPackageSymbol(chg.Package) + chg.Package.GetName() + abandonedSymbol + " " +
 				summary.BuildVersionLabel(chg.Package.GetVersion()),
-			),
-			0,
 		)
 	}
 
