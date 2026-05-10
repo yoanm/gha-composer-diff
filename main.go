@@ -105,7 +105,7 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 	return handleDiffSummary(diffMap, cfg.inputs.withStepSummary)
 }
 
-func PrintNoticeWarning(diffMap contract.DiffMap, lockPath string, lockLine int) {
+func PrintNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 	// Notice for unchanged abandoned packages or unchanged package with non-semver version
 	// Warning for added/updated abandoned packages and added/updated packages with non-semver version
 	noticePkgs := []*contract.PackageChange{}
@@ -126,7 +126,7 @@ func PrintNoticeWarning(diffMap contract.DiffMap, lockPath string, lockLine int)
 			"Following packages are unchanged but abandoned and/or not using a semver version:",
 			noticePkgs,
 		)
-		sdk.NoticeAnnotation(body, lockPath, "Noteworthy unchanged packages", lockLine)
+		sdk.NoticeAnnotation(body, filepath, "Noteworthy unchanged packages", line)
 	}
 
 	if len(warningPkgs) > 0 {
@@ -134,7 +134,7 @@ func PrintNoticeWarning(diffMap contract.DiffMap, lockPath string, lockLine int)
 			"Following packages have been updated and are abandoned and/or not using a semver version.",
 			warningPkgs,
 		)
-		sdk.WarningAnnotation(body, lockPath, "Noteworthy changed packages", lockLine)
+		sdk.WarningAnnotation(body, filepath, "Noteworthy changed packages", line)
 	}
 }
 

@@ -8,15 +8,15 @@ import (
 
 const annotationEOL = "%0A"
 
-func NoticeAnnotation(txt string, file string, title string, line int) {
-	log.Print(buildAnnotation("notice", title, txt, file, line))
+func NoticeAnnotation(body string, file string, title string, line int) {
+	log.Print(buildAnnotation("notice", title, body, file, line))
 }
 
-func WarningAnnotation(title string, txt string, file string, line int) {
-	log.Print(buildAnnotation("warning", title, txt, file, line))
+func WarningAnnotation(body string, file string, title string, line int) {
+	log.Print(buildAnnotation("warning", title, body, file, line))
 }
 
-func buildAnnotation(annoHeader string, title string, txt string, file string, line int) string {
+func buildAnnotation(annoHeader string, title string, body string, file string, line int) string {
 	// Replace \n by %0A to ensure multiline messages are correctly displayed in GitHub UI
 	builder := strings.Builder{}
 
@@ -35,7 +35,7 @@ func buildAnnotation(annoHeader string, title string, txt string, file string, l
 	if len(parts) > 0 {
 		builder.WriteString(" " + strings.Join(parts, ","))
 	}
-	builder.WriteString("::" + strings.ReplaceAll(txt, "\n", annotationEOL))
+	builder.WriteString("::" + strings.ReplaceAll(body, "\n", annotationEOL))
 
 	return builder.String()
 }
