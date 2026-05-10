@@ -135,10 +135,16 @@ func buildAnnotationBody(header string, warningPkgs []*contract.PackageChange) s
 	builder := markdown.NewBuilder()
 	builder.WriteLine(header, 0)
 	for _, chg := range warningPkgs {
+		abandonedSymbol := ""
+		if chg.Package.IsAbandoned() {
+			abandonedSymbol = summary.AbandonedSymbol
+		}
 		builder.WriteLine(
 			fmt.Sprintf(
-				" - %s %s",
-				summary.BuildPackageLabel(chg.Package),
+				" - %s%s%s %s",
+				summary.GetPackageSymbol(chg.Package),
+				chg.Package.GetName(),
+				abandonedSymbol,
 				summary.BuildVersionLabel(chg.Package.GetVersion()),
 			),
 			0,
