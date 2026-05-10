@@ -82,7 +82,17 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 		return err
 	}
 
-	filterAndPrintNoticeWarning(diffMap, cfg)
+	if cfg.inputs.omitUnchanged {
+		for pkg, chg := range diffMap {
+			if chg.Operation.Name == contract.NoChangeOperation {
+				delete(diffMap, pkg)
+			}
+		}
+	}
+	// 7th line is usually the "content-hash" line in the lock file. Most of time it will be updated so will show up
+	// on the diff. It should at least be around the content-hash line if not exactly on it.
+	// (Annotations work also if attached to unchanged line, but are less noticeable on the diff UI)
+	PrintNoticeWarning(diffMap, cfg.inputs.lockPath, 7)
 
 	if len(diffMap) == 0 {
 		slog.Info("No packages detected.")
@@ -95,17 +105,14 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 	return handleDiffSummary(diffMap, cfg.inputs.withStepSummary)
 }
 
-func filterAndPrintNoticeWarning(diffMap contract.DiffMap, cfg *Config) {
-	// Filter out if needed and print notice/warning
+func PrintNoticeWarning(diffMap contract.DiffMap, lockPath string, lockLine int) {
 	// Notice for unchanged abandoned packages or unchanged package with non-semver version
 	// Warning for added/updated abandoned packages and added/updated packages with non-semver version
 	noticePkgs := []*contract.PackageChange{}
 	warningPkgs := []*contract.PackageChange{}
-	for pkg, chg := range diffMap {
+	for _, chg := range diffMap {
 		if chg.Operation.Name == contract.NoChangeOperation {
-			if cfg.inputs.omitUnchanged {
-				delete(diffMap, pkg)
-			} else if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
+			if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
 				noticePkgs = append(noticePkgs, chg)
 			}
 		} else if chg.Operation.Name != contract.RemovalOperation {
@@ -119,7 +126,7 @@ func filterAndPrintNoticeWarning(diffMap contract.DiffMap, cfg *Config) {
 			"Following packages are unchanged but abandoned and/or not using a semver version:",
 			noticePkgs,
 		)
-		sdk.NoticeAnnotation("Noteworthy unchanged packages", body, cfg.inputs.lockPath)
+		sdk.NoticeAnnotation(body, lockPath, "Noteworthy unchanged packages", lockLine)
 	}
 
 	if len(warningPkgs) > 0 {
@@ -127,7 +134,7 @@ func filterAndPrintNoticeWarning(diffMap contract.DiffMap, cfg *Config) {
 			"Following packages have been updated and are abandoned and/or not using a semver version.",
 			warningPkgs,
 		)
-		sdk.WarningAnnotation("Noteworthy changed packages", body, cfg.inputs.lockPath)
+		sdk.WarningAnnotation(body, lockPath, "Noteworthy changed packages", lockLine)
 	}
 }
 
