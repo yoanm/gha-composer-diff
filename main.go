@@ -117,7 +117,7 @@ func filterAndPrintNoticeWarning(diffMap contract.DiffMap, cfg *Config) {
 	if len(noticePkgs) > 0 {
 		body := buildAnnotationBody(
 			"Following packages are unchanged but abandoned and/or not using a semver version:",
-			warningPkgs,
+			noticePkgs,
 		)
 		sdk.NoticeAnnotation("Noteworthy unchanged packages", body, cfg.inputs.lockPath)
 	}
