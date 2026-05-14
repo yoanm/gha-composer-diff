@@ -21,6 +21,7 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 	if diffMap, err = handleDiff(context.Background(), client, cfg); err != nil {
 		return err
 	}
+	panic("arghh")
 
 	if cfg.inputs.omitUnchanged {
 		slog.Info("Filtering out unchanged packages...")
