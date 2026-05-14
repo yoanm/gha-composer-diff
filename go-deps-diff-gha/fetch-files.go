@@ -1,4 +1,4 @@
-package basewrapper
+package ddgha
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"wrapper/gha-wrapper/api"
+	"wrapper/go-gha-wrapper/api"
 )
 
 var (

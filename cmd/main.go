@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"wrapper/gha-wrapper/sdk"
+	"wrapper/go-gha-wrapper/sdk"
 
 	"wrapper"
 )

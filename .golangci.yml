@@ -207,7 +207,8 @@ formatters:
         - prefix(github.com/yoanm)
         - prefix(github.com/yoanm/go-deps-diff)
         - prefix(github.com/yoanm/go-composer-diff)
-        - prefix(wrapper/gha-wrapper)
+        - prefix(wrapper/go-gha-wrapper)
+        - prefix(wrapper/go-deps-diff-gha)
         - prefix(wrapper)
         - blank
         - dot

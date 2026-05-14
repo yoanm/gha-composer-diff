@@ -1,4 +1,4 @@
-package basewrapper
+package wrapper
 
 import (
 	"log/slog"
@@ -7,28 +7,28 @@ import (
 	summary "github.com/yoanm/go-deps-diff-summary"
 	"github.com/yoanm/go-deps-diff/contract"
 
-	"wrapper/gha-wrapper/sdk"
+	"wrapper/go-gha-wrapper/sdk"
 )
 
-// PrintNoticeWarning will find noteworthy packages and print a notice or warning for the end user.
+// printNoticeWarning will find noteworthy packages and print a notice or warning for the end user.
 //   - filepath should be a file likely updated by the PR Usually the lock file.
 //     (For PR only, doesn't matter for push event)
 //   - line should be a line in the provided filepath likely updated by the PR
 //     (For PR only, doesn't matter for push event).
-func PrintNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
+func printNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 	slog.Info("Managing annotations...")
 	// Notice for unchanged abandoned packages or unchanged package with non-semver version
 	// Warning for added/updated abandoned packages and added/updated packages with non-semver version
-	noticePkgs := []*contract.PackageChange{}
-	warningPkgs := []*contract.PackageChange{}
+	var (
+		noticePkgs  []*contract.PackageChange
+		warningPkgs []*contract.PackageChange
+	)
 
 	for _, chg := range diffMap {
-		if chg.Operation.Name == contract.NoChangeOperation {
-			if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
+		if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
+			if chg.Operation.Name == contract.NoChangeOperation {
 				noticePkgs = append(noticePkgs, chg)
-			}
-		} else if chg.Operation.Name != contract.RemovalOperation {
-			if chg.Package.GetVersion().Semver == nil || chg.Package.IsAbandoned() {
+			} else if chg.Operation.Name != contract.RemovalOperation {
 				warningPkgs = append(warningPkgs, chg)
 			}
 		}

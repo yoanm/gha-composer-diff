@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"wrapper/gha-wrapper/api"
+	"wrapper/go-gha-wrapper/api"
 )
 
 // mockHTTPClient is a mock implementation of HTTPClient for testing.
