@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"wrapper/go-gha-wrapper/api"
+	"action/go-gha-wrapper/api"
 )
 
 var (

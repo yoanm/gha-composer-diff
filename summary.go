@@ -1,4 +1,4 @@
-package wrapper
+package action
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	summary "github.com/yoanm/go-deps-diff-summary"
 	"github.com/yoanm/go-deps-diff/contract"
 
-	"wrapper/go-gha-wrapper/sdk"
+	"action/go-gha-wrapper/sdk"
 )
 
 func handleDiffSummary(diffMap contract.DiffMap, asStepSummary bool) error {

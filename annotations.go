@@ -1,4 +1,4 @@
-package wrapper
+package action
 
 import (
 	"log/slog"
@@ -7,7 +7,7 @@ import (
 	summary "github.com/yoanm/go-deps-diff-summary"
 	"github.com/yoanm/go-deps-diff/contract"
 
-	"wrapper/go-gha-wrapper/sdk"
+	"action/go-gha-wrapper/sdk"
 )
 
 // printNoticeWarning will find noteworthy packages and print a notice or warning for the end user.
@@ -53,11 +53,11 @@ func printNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 	}
 }
 
-func buildAnnotationBody(header string, warningPkgs []*contract.PackageChange) string {
+func buildAnnotationBody(header string, changeList []*contract.PackageChange) string {
 	builder := strings.Builder{}
 	builder.WriteString(header + "\n")
 
-	for _, chg := range warningPkgs {
+	for _, chg := range changeList {
 		abandonedSymbol := ""
 		if chg.Package.IsAbandoned() {
 			abandonedSymbol = summary.AbandonedSymbol

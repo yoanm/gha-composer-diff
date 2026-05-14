@@ -1,4 +1,4 @@
-package wrapper
+package action
 
 import (
 	"context"
@@ -9,9 +9,9 @@ import (
 
 	compdiff "github.com/yoanm/go-composer-diff"
 
-	"wrapper/go-gha-wrapper/api"
+	"action/go-gha-wrapper/api"
 
-	ddgha "wrapper/go-deps-diff-gha"
+	ddgha "action/go-deps-diff-gha"
 )
 
 func handleDiff(

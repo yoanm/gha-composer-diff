@@ -5,31 +5,31 @@ import (
 	"net/http"
 	"os"
 
-	"wrapper/go-gha-wrapper/sdk"
+	"action/go-gha-wrapper/sdk"
 
-	"wrapper"
+	"action"
 )
 
 func main() {
 	sdk.OverrideSlogDefaultLogger()
 
 	var (
-		cfg *wrapper.Config
+		cfg *action.Config
 		err error
 	)
 
 	if cfg, err = parseInputs(); err != nil {
 		slog.Error(err.Error())
-		os.Exit(2) //nolint:mnd // exit code 2 for input parsing error
+		os.Exit(1)
 	}
 
-	if err = wrapper.Run(http.DefaultClient, cfg); err != nil {
+	if err = action.Run(http.DefaultClient, cfg); err != nil {
 		slog.Error(err.Error())
-		os.Exit(3) //nolint:mnd // exit code 3 for execution error
+		os.Exit(2) //nolint:mnd // exit code 2 for execution error
 	}
 }
 
-func parseInputs() (*wrapper.Config, error) {
+func parseInputs() (*action.Config, error) {
 	inputs, err := sdk.GetRequiredInputs([]string{
 		"lock-path",
 		"req-path",
@@ -45,8 +45,8 @@ func parseInputs() (*wrapper.Config, error) {
 		return nil, err //nolint:wrapcheck // Will be logged as error right away, no need to wrap it
 	}
 
-	return wrapper.NewConfig(
-		wrapper.NewActionInputs(
+	return action.NewConfig(
+		action.NewInputsConfig(
 			inputs["lock-path"],
 			inputs["req-path"],
 			inputs["previous-ref"],
@@ -58,7 +58,7 @@ func parseInputs() (*wrapper.Config, error) {
 			inputs["with-annotations"] != "false",
 			inputs["gh-token"],
 		),
-		wrapper.NewActionEnv(
+		action.NewEnvConfig(
 			os.Getenv("GITHUB_API_URL"),
 			os.Getenv("GITHUB_REPOSITORY"),
 		),

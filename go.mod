@@ -1,4 +1,4 @@
-module wrapper
+module action
 
 go 1.26
 

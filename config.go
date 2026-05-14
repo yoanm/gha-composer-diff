@@ -1,18 +1,18 @@
-package wrapper
+package action
 
 type Config struct {
-	inputs *ActionInputs
-	env    *ActionEnv
+	inputs *Inputs
+	env    *Env
 }
 
-func NewConfig(inputs *ActionInputs, env *ActionEnv) *Config {
+func NewConfig(inputs *Inputs, env *Env) *Config {
 	return &Config{
 		inputs: inputs,
 		env:    env,
 	}
 }
 
-type ActionInputs struct {
+type Inputs struct {
 	lockPath        string
 	reqPath         string
 	prevRef         string
@@ -24,7 +24,7 @@ type ActionInputs struct {
 	ghToken         string // Keep this field private to avoid accidental logging !!
 }
 
-func NewActionInputs(
+func NewInputsConfig(
 	lockPath, reqPath string,
 	prevRef, currRef string,
 	headRepo string,
@@ -32,8 +32,8 @@ func NewActionInputs(
 	withStepSummary bool,
 	withAnnotations bool,
 	ghToken string,
-) *ActionInputs {
-	return &ActionInputs{
+) *Inputs {
+	return &Inputs{
 		lockPath:        lockPath,
 		reqPath:         reqPath,
 		prevRef:         prevRef,
@@ -46,13 +46,13 @@ func NewActionInputs(
 	}
 }
 
-type ActionEnv struct {
+type Env struct {
 	ghAPIUrl     string
 	ghRepository string
 }
 
-func NewActionEnv(ghAPIUrl, ghRepository string) *ActionEnv {
-	return &ActionEnv{
+func NewEnvConfig(ghAPIUrl, ghRepository string) *Env {
+	return &Env{
 		ghAPIUrl:     ghAPIUrl,
 		ghRepository: ghRepository,
 	}

@@ -53,5 +53,5 @@ function chooseBinary() {
             throw new Error(`Unsupported architecture: ${arch}`);
     }
 
-    return path.join('./bin', `${platform}-${arch}-wrapper`)
+    return path.join('bin', `${platform}-${arch}-wrapper`)
 }
