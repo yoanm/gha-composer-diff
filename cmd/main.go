@@ -47,7 +47,7 @@ func parseInputs() (*action.Config, error) {
 
 	return action.NewConfig(
 		action.NewInputsConfig(
-			inputs["lock-path"],
+			inputs["lock-path"]+"PLOP",
 			inputs["req-path"],
 			inputs["previous-ref"],
 			inputs["current-ref"],

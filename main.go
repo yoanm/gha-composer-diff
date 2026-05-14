@@ -20,7 +20,5 @@ func Run(httpClient api.HTTPClient, cfg *Config) error {
 		return err
 	}
 
-	panic("arghh")
-
 	return handleDiffSummary(diffMap, cfg.inputs.withStepSummary)
 }
