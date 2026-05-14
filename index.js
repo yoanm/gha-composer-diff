@@ -1,7 +1,14 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+
+/**
+ * __dirname is not defined when using import (unlike when using require)
+ * Following custom code built it
+ */
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let binPath;
 
@@ -54,5 +61,5 @@ function chooseBinary() {
             throw new Error(`Unsupported architecture: ${arch}`);
     }
 
-    return path.join(process.cwd(), 'bin', `${platform}-${arch}-wrapper`)
+    return path.join(__dirname, 'bin', `${platform}-${arch}-wrapper`)
 }
