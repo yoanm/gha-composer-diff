@@ -14,6 +14,7 @@ try {
 
 if (false === fs.existsSync(binPath)) {
     console.log(`::error::Binary wrapper not found: ${path.basename(binPath)}`)
+    console.debug(`::debug::Binary path: ${binPath}`)
     process.exit(2)
 }
 
