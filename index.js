@@ -1,5 +1,6 @@
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 let binPath;
@@ -11,7 +12,7 @@ try {
     process.exit(1)
 }
 
-if (false === path.existsSync(binPath)) {
+if (false === fs.existsSync(binPath)) {
     console.log(`::error::Binary wrapper not found: ${path.basename(binPath)}`)
     process.exit(2)
 }
