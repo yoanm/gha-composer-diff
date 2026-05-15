@@ -1,21 +1,16 @@
-package action
+package ghaction
 
 import (
 	"log/slog"
 	"strings"
 
+	"ghaction/go-gha-wrapper/ghasdk"
+
 	summary "github.com/yoanm/go-deps-diff-summary"
 	"github.com/yoanm/go-deps-diff/contract"
-
-	"action/go-gha-wrapper/sdk"
 )
 
-// printNoticeWarning will find noteworthy packages and print a notice or warning for the end user.
-//   - filepath should be a file likely updated by the PR Usually the lock file.
-//     (For PR only, doesn't matter for push event)
-//   - line should be a line in the provided filepath likely updated by the PR
-//     (For PR only, doesn't matter for push event).
-func printNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
+func (gha *Action) printNoticeWarning(diffMap contract.DiffMap) {
 	slog.Info("Managing annotations...")
 	// Notice for unchanged abandoned packages or unchanged package with non-semver version
 	// Warning for added/updated abandoned packages and added/updated packages with non-semver version
@@ -34,13 +29,19 @@ func printNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 		}
 	}
 
+	// Composer specific: 7th line is usually the "content-hash" line in the composer lock.
+	// Most time it will be updated so annotations will show up on the diff. It should at least be around the
+	// content-hash line if not exactly on it.
+	// (Annotations work also if attached to unchanged line, but are less noticeable on the diff UI)
+	filepath, line := gha.paths.lock, 7
+
 	if len(noticePkgs) > 0 {
 		body := buildAnnotationBody(
 			"Following packages are unchanged but abandoned ("+summary.AbandonedSymbol+") "+
 				"and/or not using a semver version ("+summary.NonSemverSymbol+"):",
 			noticePkgs,
 		)
-		sdk.NoticeAnnotation(body, filepath, "Noteworthy unchanged packages", line)
+		ghasdk.NoticeAnnotation(body, filepath, "Noteworthy unchanged packages", line)
 	}
 
 	if len(warningPkgs) > 0 {
@@ -49,7 +50,7 @@ func printNoticeWarning(diffMap contract.DiffMap, filepath string, line int) {
 				"and/or not using a semver version ("+summary.NonSemverSymbol+"):",
 			warningPkgs,
 		)
-		sdk.WarningAnnotation(body, filepath, "Noteworthy changed packages", line)
+		ghasdk.WarningAnnotation(body, filepath, "Noteworthy changed packages", line)
 	}
 }
 

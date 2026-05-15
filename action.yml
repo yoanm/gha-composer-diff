@@ -6,22 +6,24 @@ description: |
   In case lock file is updated, action will output versions differences as step summary
 
 inputs:
-  lock-path:
+  # --> Inputs
+  manager:
     required: true
-    description: Path to the lock file from the repository root
-    default: composer.lock
-  req-path:
-    required: true
-    description: Path to the requirement file from the repository root
-    default: composer.json
-  previous-ref:
+    description: Dependency manager
+    default: composer
+  base-sha:
     required: true
     description: Previous commit SHA to compare with
     default: ${{ github.event.pull_request.base.sha || github.event.before }}
-  current-ref:
+  head-sha:
     required: true
     description: Current commit SHA to compare with
     default: ${{ github.event.pull_request.head.sha || github.event.after }}
+  base-repo:
+    required: true
+    description: |
+      BASE repository (owner/repo) to fetch the files from.
+    default: ${{ github.event.pull_request.head.repo.full_name }}
   head-repo:
     required: true
     description: |
@@ -29,6 +31,8 @@ inputs:
       It will be used to fetch the files from the head repository instead of the base repository. 
       This is meaningful only in case of a pull request from a forked repository.
     default: ${{ github.event.pull_request.head.repo.full_name }}
+  # <-- Inputs
+  # --> Options
   omit-unchanged:
     description: |
       Whether to take into account unchanged dependencies in the summary. By default, only changed dependencies are included.
@@ -40,9 +44,12 @@ inputs:
   with-annotations:
     description: Whether to post annotations for packages which may deserve your attention (e.g. abandoned packages, non-semver versions, etc.)
     default: 'true'
+  # <-- Options
+  # --> Secrets
   gh-token:
     description: A GitHub PAT used to fetch the files from the repository
     default: ${{ github.token }}
+  # <-- Secrets
 
 outputs:
   summary:

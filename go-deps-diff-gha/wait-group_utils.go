@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-func RunParallelRoutines[R any, C chan R](
+func RunParallelRoutines[C chan R, R any](
 	resultChan C,
 	routineIter iter.Seq[func() R],
 	collectorCb func(arg R) error,

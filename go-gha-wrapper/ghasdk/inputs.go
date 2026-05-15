@@ -1,13 +1,17 @@
-package sdk
+package ghasdk
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"strings"
 )
 
-var ErrMissingRequiredInput = errors.New("GHA input is missing")
+type MissingRequiredInputError struct {
+	name string
+}
+
+func (err MissingRequiredInputError) Error() string {
+	return "GHA input is missing: " + err.name
+}
 
 func GetInput(name string) string {
 	return os.Getenv("INPUT_" + strings.ToUpper(name))
@@ -16,7 +20,7 @@ func GetInput(name string) string {
 func GetRequiredInput(name string) (string, error) {
 	val := GetInput(name)
 	if val == "" {
-		return "", fmt.Errorf("%w: %s", ErrMissingRequiredInput, name)
+		return "", MissingRequiredInputError{name}
 	}
 
 	return val, nil

@@ -1,4 +1,4 @@
-module action
+module ghaction
 
 go 1.26
 

@@ -1,30 +1,30 @@
-package action
+package ghaction
 
 import (
 	"fmt"
 	"log/slog"
 
+	"ghaction/go-gha-wrapper/ghasdk"
+
 	summary "github.com/yoanm/go-deps-diff-summary"
 	"github.com/yoanm/go-deps-diff/contract"
-
-	"action/go-gha-wrapper/sdk"
 )
 
-func handleDiffSummary(diffMap contract.DiffMap, asStepSummary bool) error {
+func (gha *Action) handleDiffSummary(diffMap contract.DiffMap) error {
 	slog.Info("Generating summary for changes...")
 
-	chgSummary := summary.GenerateForChanges(diffMap, "Composer")
+	chgSummary := summary.GenerateForChanges(diffMap, string(gha.manager))
 
 	slog.Debug("Setting summary as action output...")
 
-	if err := sdk.AddMultilineOutput("summary", chgSummary); err != nil {
+	if err := ghasdk.AddMultilineOutput("summary", chgSummary); err != nil {
 		return fmt.Errorf("setting summary as action output: %w", err)
 	}
 
-	if asStepSummary {
+	if gha.options.withStepSummary {
 		slog.Info("Setting summary as step summary...")
 
-		if err := sdk.AppendStepSummary(chgSummary); err != nil {
+		if err := ghasdk.AppendStepSummary(chgSummary); err != nil {
 			return fmt.Errorf("setting summary as step summary: %w", err)
 		}
 	}

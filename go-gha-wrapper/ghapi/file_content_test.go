@@ -1,4 +1,4 @@
-package api_test
+package ghapi_test
 
 import (
 	"encoding/base64"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"action/go-gha-wrapper/api"
+	"ghaction/go-gha-wrapper/ghapi"
 )
 
 // mockHTTPClient is a mock implementation of HTTPClient for testing.
@@ -21,7 +21,7 @@ func (m *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 // compile-time assertion that mockHTTPClient implements HTTPClient.
-var _ api.HTTPClient = (*mockHTTPClient)(nil)
+var _ ghapi.HTTPClient = (*mockHTTPClient)(nil)
 
 // newMockResponse creates a minimal http.Response with all required fields.
 func newMockResponse(statusCode int, body string) *http.Response {
@@ -52,7 +52,7 @@ func TestLoadFileContent_Success(t *testing.T) {
 		},
 	}
 
-	client := api.NewClient(mock, "https://api.github.com", "test-token")
+	client := ghapi.NewClient(mock, "https://api.github.com", "test-token")
 
 	content, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err != nil {
@@ -75,7 +75,7 @@ func TestLoadFileContent_TypeNotFile(t *testing.T) {
 		},
 	}
 
-	client := api.NewClient(mock, "https://api.github.com", "test-token")
+	client := ghapi.NewClient(mock, "https://api.github.com", "test-token")
 
 	_, err := client.LoadFileContent(t.Context(), "owner/repo", "path", "main")
 	if err == nil || !strings.Contains(err.Error(), "invalid response type") {
@@ -99,7 +99,7 @@ func TestLoadFileContent_EncodingNotBase64(t *testing.T) {
 		},
 	}
 
-	client := api.NewClient(mock, "https://api.github.com", "test-token")
+	client := ghapi.NewClient(mock, "https://api.github.com", "test-token")
 
 	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "unsupported encoding") {
@@ -121,7 +121,7 @@ func TestLoadFileContent_HTTP404(t *testing.T) {
 		},
 	}
 
-	client := api.NewClient(mock, "https://api.github.com", "test-token")
+	client := ghapi.NewClient(mock, "https://api.github.com", "test-token")
 
 	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "404") {
@@ -139,7 +139,7 @@ func TestLoadFileContent_HTTP401(t *testing.T) {
 		},
 	}
 
-	client := api.NewClient(mock, "https://api.github.com", "test-token")
+	client := ghapi.NewClient(mock, "https://api.github.com", "test-token")
 
 	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "401") {
@@ -159,7 +159,7 @@ func TestLoadFileContent_InvalidBase64(t *testing.T) {
 		},
 	}
 
-	client := api.NewClient(mock, "https://api.github.com", "test-token")
+	client := ghapi.NewClient(mock, "https://api.github.com", "test-token")
 
 	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err == nil || !strings.Contains(err.Error(), "failed to decode base64") {
@@ -204,7 +204,7 @@ func TestLoadFileContent_URLConstruction(t *testing.T) {
 				},
 			}
 
-			client := api.NewClient(mock, "https://api.github.com", "test-token")
+			client := ghapi.NewClient(mock, "https://api.github.com", "test-token")
 
 			_, err := client.LoadFileContent(t.Context(), testCase.repo, testCase.path, testCase.ref)
 			if err != nil {
@@ -234,7 +234,7 @@ func TestLoadFileContent_HeaderVerification(t *testing.T) {
 		},
 	}
 
-	client := api.NewClient(mock, "https://api.github.com", "a-token")
+	client := ghapi.NewClient(mock, "https://api.github.com", "a-token")
 
 	_, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 	if err != nil {
@@ -281,7 +281,7 @@ func TestLoadFileContent_VariousContentTypes(t *testing.T) {
 				},
 			}
 
-			client := api.NewClient(mock, "https://api.github.com", "a-token")
+			client := ghapi.NewClient(mock, "https://api.github.com", "a-token")
 
 			content, err := client.LoadFileContent(t.Context(), "owner/repo", "file.txt", "main")
 			if err != nil {

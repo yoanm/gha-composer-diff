@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"action/go-gha-wrapper/api"
+	"ghaction/go-gha-wrapper/ghapi"
 )
 
 var (
@@ -20,7 +20,11 @@ type FileSpec struct {
 	Ref  string
 }
 
-func FetchFileContents(ctx context.Context, client *api.Client, files map[string]FileSpec) (map[string][]byte, error) {
+func FetchFileContents(
+	ctx context.Context,
+	client *ghapi.Client,
+	files map[string]FileSpec,
+) (map[string][]byte, error) {
 	if client == nil {
 		return nil, fmt.Errorf("%w", ErrClientRequired)
 	}
@@ -80,7 +84,7 @@ func FetchFileContents(ctx context.Context, client *api.Client, files map[string
 	}
 
 	if err := RunParallelRoutines(resultChan, routineIter, collectorCb); err != nil {
-		return nil, fmt.Errorf("fetching files: %w", err)
+		return nil, err
 	}
 
 	return fileContents, nil
