@@ -13,7 +13,7 @@ import (
 func (gha *Action) handleDiffSummary(diffMap contract.DiffMap) error {
 	slog.Info("Generating summary for changes...")
 
-	chgSummary := summary.GenerateForChanges(diffMap, string(gha.manager))
+	chgSummary := summary.GenerateForChanges(diffMap, getManagerName(gha.manager))
 
 	slog.Debug("Setting summary as action output...")
 

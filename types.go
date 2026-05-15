@@ -1,11 +1,15 @@
 package ghaction
 
-import "ghaction/go-gha-wrapper/ghapi"
+import (
+	"fmt"
+
+	"ghaction/go-gha-wrapper/ghapi"
+)
 
 type Manager string
 
 const (
-	ComposerManager Manager = "Composer"
+	ComposerManager Manager = "composer"
 )
 
 type Action struct {
@@ -33,4 +37,12 @@ type actionOptions struct {
 	omitUnchanged   bool
 	withStepSummary bool
 	withAnnotations bool
+}
+
+type UnsupportedManagerError struct {
+	manager Manager
+}
+
+func (err UnsupportedManagerError) Error() string {
+	return fmt.Sprintf("unsupported manager: %s", err.manager)
 }
