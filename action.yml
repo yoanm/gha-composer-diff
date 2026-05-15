@@ -1,0 +1,63 @@
+name: 'TODO'
+branding:
+  icon: 'package'
+  color: 'orange'
+description: |
+  In case lock file is updated, action will output versions differences as step summary
+
+inputs:
+  # --> Inputs
+  manager:
+    required: true
+    description: Dependency manager
+    default: composer
+  base-sha:
+    required: true
+    description: Previous commit SHA to compare with
+    default: ${{ github.event.pull_request.base.sha || github.event.before }}
+  head-sha:
+    required: true
+    description: Current commit SHA to compare with
+    default: ${{ github.event.pull_request.head.sha || github.event.after }}
+  base-repo:
+    required: true
+    description: |
+      BASE repository (owner/repo) to fetch the files from.
+    default: ${{ github.event.pull_request.head.repo.full_name }}
+  head-repo:
+    required: true
+    description: |
+      HEAD repository (owner/repo) to fetch the files from, in case of a pull request. 
+      It will be used to fetch the files from the head repository instead of the base repository. 
+      This is meaningful only in case of a pull request from a forked repository.
+    default: ${{ github.event.pull_request.head.repo.full_name }}
+  # <-- Inputs
+  # --> Options
+  omit-unchanged:
+    description: |
+      Whether to take into account unchanged dependencies in the summary. By default, only changed dependencies are included.
+      Attention: skipping unchanged packages will also hide some important information like unchanged abandoned packages or unchanged packages with a non-semver version !
+    default: 'false'
+  with-step-summary:
+    description: Whether to output the summary in the step summary
+    default: 'true'
+  with-annotations:
+    description: Whether to post annotations for packages which may deserve your attention (e.g. abandoned packages, non-semver versions, etc.)
+    default: 'true'
+  # <-- Options
+  # --> Secrets
+  gh-token:
+    description: A GitHub PAT used to fetch the files from the repository
+    default: ${{ github.token }}
+  # <-- Secrets
+
+outputs:
+  summary:
+    description: |
+      Summary of the differences between the previous and current files, formatted in markdown.
+      In case you don't want to use the step summary, you can use this output to get the summary 
+      and use it your own way (e.g. post a comment on the pull request).
+
+runs:
+  using: 'node24'
+  main: 'index.js'

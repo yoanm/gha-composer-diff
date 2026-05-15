@@ -32,4 +32,4 @@ go.work.sum
 # .vscode/
 
 ## Ignore project binary
-gha-deps-diff
+bin/wrapper
