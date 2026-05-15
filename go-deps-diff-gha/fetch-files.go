@@ -9,10 +9,7 @@ import (
 	"ghaction/go-gha-wrapper/ghapi"
 )
 
-var (
-	ErrClientRequired   = errors.New("client is required")
-	ErrNoFilesSpecified = errors.New("at least one file must be specified")
-)
+var errClientRequired = errors.New("client is required")
 
 type FileSpec struct {
 	Repo string
@@ -26,11 +23,12 @@ func FetchFileContents(
 	files map[string]FileSpec,
 ) (map[string][]byte, error) {
 	if client == nil {
-		return nil, fmt.Errorf("%w", ErrClientRequired)
+		return nil, errClientRequired
 	}
 
+	fileContents := make(map[string][]byte)
 	if len(files) == 0 {
-		return nil, fmt.Errorf("%w", ErrNoFilesSpecified)
+		return fileContents, nil
 	}
 
 	type fetchResult struct {
@@ -40,7 +38,6 @@ func FetchFileContents(
 	}
 
 	resultChan := make(chan fetchResult, len(files))
-	fileContents := make(map[string][]byte)
 
 	ctx, cancelContextCb := context.WithCancel(ctx)
 

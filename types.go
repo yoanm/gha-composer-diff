@@ -40,9 +40,9 @@ type actionOptions struct {
 }
 
 type UnsupportedManagerError struct {
-	manager Manager
+	Manager Manager
 }
 
 func (err UnsupportedManagerError) Error() string {
-	return fmt.Sprintf("unsupported manager: %s", err.manager)
+	return fmt.Sprintf("unsupported manager: %s", err.Manager)
 }

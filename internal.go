@@ -18,7 +18,7 @@ func (gha *Action) handleDiff(ctx context.Context) (contract.DiffMap, error) {
 	case ComposerManager:
 		diffMap, err = gha.handleComposerDiff(ctx)
 	default:
-		return nil, UnsupportedManagerError{gha.manager}
+		return nil, UnsupportedManagerError{Manager: gha.manager}
 	}
 
 	if err != nil {
@@ -46,7 +46,7 @@ func getManagerPaths(manager Manager) (pathInputs, error) {
 	case ComposerManager:
 		paths.req, paths.lock = "composer.json", "composer.lock"
 	default:
-		return paths, UnsupportedManagerError{manager}
+		return paths, UnsupportedManagerError{Manager: manager}
 	}
 
 	return paths, nil

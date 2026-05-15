@@ -6,11 +6,11 @@ import (
 )
 
 type MissingRequiredInputError struct {
-	name string
+	Name string
 }
 
 func (err MissingRequiredInputError) Error() string {
-	return "GHA input is missing: " + err.name
+	return "GHA input is missing: " + err.Name
 }
 
 func GetInput(name string) string {
@@ -20,7 +20,7 @@ func GetInput(name string) string {
 func GetRequiredInput(name string) (string, error) {
 	val := GetInput(name)
 	if val == "" {
-		return "", MissingRequiredInputError{name}
+		return "", MissingRequiredInputError{Name: name}
 	}
 
 	return val, nil

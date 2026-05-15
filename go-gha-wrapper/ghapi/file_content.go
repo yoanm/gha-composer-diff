@@ -33,13 +33,13 @@ func (client *Client) LoadFileContent(ctx context.Context, repo string, path str
 
 	url := fmt.Sprintf("/repos/%s/contents/%s?ref=%s", repo, path, ref)
 	if body, err = client.httpGetRequest(ctx, url); err != nil {
-		return nil, fmt.Errorf("failed to fetch github API: %w", err)
+		return nil, err
 	}
 
 	// Parse JSON response
 	var fileResp GitHubFileResponse
 	if err = json.Unmarshal(body, &fileResp); err != nil {
-		return nil, fmt.Errorf("failed to parse GitHub API response: %w", err)
+		return nil, fmt.Errorf("failed to parse response body: %w", err)
 	}
 
 	if fileResp.Type != "file" {

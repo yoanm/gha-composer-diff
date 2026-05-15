@@ -56,7 +56,7 @@ func (client *Client) httpGetRequest(ctx context.Context, path string) ([]byte, 
 	// Execute the request
 	var resp *http.Response
 	if resp, err = client.client.Do(req); err != nil {
-		return nil, fmt.Errorf("failed to fetch file from GitHub API: %w", err)
+		return nil, fmt.Errorf("failed to perform API request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -70,7 +70,7 @@ func (client *Client) httpGetRequest(ctx context.Context, path string) ([]byte, 
 	// Read response body
 	var body []byte
 	if body, err = io.ReadAll(resp.Body); err != nil {
-		return nil, fmt.Errorf("failed to read HTTP response: %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	return body, nil
