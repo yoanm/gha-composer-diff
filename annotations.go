@@ -66,7 +66,7 @@ func buildAnnotationBody(header string, changeList []*contract.PackageChange) st
 
 		builder.WriteString(
 			" - " + summary.GetPackageSymbol(chg.Package) + chg.Package.GetName() + abandonedSymbol + " " +
-				summary.BuildVersionLabel(chg.Package.GetVersion()),
+				summary.BuildVersionLabel(chg.Package.GetVersion()) + "\n",
 		)
 	}
 
